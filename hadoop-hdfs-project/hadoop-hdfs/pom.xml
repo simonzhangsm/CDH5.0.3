@@ -27,7 +27,7 @@ http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <artifactId>hadoop-hdfs</artifactId>
   <version>2.3.0-cdh5.0.3</version>
   <description>Apache Hadoop HDFS</description>
-  <name>Apache Hadoop HDFS</name>
+  <name>hadoop-hdfs</name>
   <packaging>jar</packaging>
 
   <properties>
@@ -593,7 +593,7 @@ http://maven.apache.org/xsd/maven-4.0.0.xsd">
                     </exec>
                     <!-- The second make is a workaround for HADOOP-9215.  It can
                          be removed when version 2.6 of cmake is no longer supported . -->
-                    <exec executable="make" dir="${project.build.directory}/native" failonerror="true"></exec>
+                    <!-- exec executable="make" dir="${project.build.directory}/native" failonerror="true"></exec -->
                   </target>
                 </configuration>
               </execution>

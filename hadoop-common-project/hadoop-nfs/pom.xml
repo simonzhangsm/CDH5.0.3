@@ -28,7 +28,7 @@
   <version>2.3.0-cdh5.0.3</version>
   <packaging>jar</packaging>
 
-  <name>Apache Hadoop NFS</name>
+  <name>hadoop-nfs</name>
   <description>Apache Hadoop NFS library</description>
 
   <properties>

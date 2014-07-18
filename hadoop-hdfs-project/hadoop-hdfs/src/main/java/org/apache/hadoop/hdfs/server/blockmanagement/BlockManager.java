@@ -2233,12 +2233,12 @@ assert storedBlock.findDatanode(dn) < 0 : "Block " + block
                                boolean logEveryBlock)
   throws IOException {
     assert block != null && namesystem.hasWriteLock();
-    BlockInfo storedBlock;
+    BlockInfo storedBlock = block;
     if (block instanceof BlockInfoUnderConstruction) {
       //refresh our copy in case the block got completed in another thread
       storedBlock = blocksMap.getStoredBlock(block);
-    } else {
-      storedBlock = block;
+   // } else {
+   //   storedBlock = block;
     }
     if (storedBlock == null || storedBlock.getBlockCollection() == null) {
       // If this block does not belong to anyfile, then we are done.

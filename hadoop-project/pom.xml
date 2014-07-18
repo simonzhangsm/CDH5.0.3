@@ -26,7 +26,7 @@
   <artifactId>hadoop-project</artifactId>
   <version>2.3.0-cdh5.0.3</version>
   <description>Apache Hadoop Project POM</description>
-  <name>Apache Hadoop Project POM</name>
+  <name>hadoop-project</name>
   <packaging>pom</packaging>
 
   <properties>
@@ -1094,8 +1094,8 @@
             <artifactId>maven-compiler-plugin</artifactId>
             <configuration>
               <fork>true</fork>
-              <source>1.6</source>
-              <target>1.6</target>
+              <source>1.7</source>
+              <target>1.7</target>
               <compilerArguments>
                 <Xlint/>
                 <Xmaxwarns>9999</Xmaxwarns>
