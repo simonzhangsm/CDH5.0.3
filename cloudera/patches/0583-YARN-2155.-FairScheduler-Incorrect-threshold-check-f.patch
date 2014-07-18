@@ -1,0 +1,79 @@
+From 55374deeb89504a80f550760816ba6483542594d Mon Sep 17 00:00:00 2001
+From: Karthik Kambatla <kasha@apache.org>
+Date: Thu, 12 Jun 2014 21:26:39 +0000
+Subject: [PATCH 583/597] YARN-2155. FairScheduler: Incorrect threshold check for preemption. (Wei Yan via kasha)
+
+git-svn-id: https://svn.apache.org/repos/asf/hadoop/common/branches/branch-2@1602297 13f79535-47bb-0310-9956-ffa450edef68
+(cherry picked from commit a5689936327d9e54fd691a32f03bc1f64115070b)
+---
+ .../scheduler/fair/FairScheduler.java              |    4 +-
+ .../fair/TestFairSchedulerPreemption.java          |   32 ++++++++++++++++++++
+ 2 files changed, 34 insertions(+), 2 deletions(-)
+
+diff --git a/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/fair/FairScheduler.java b/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/fair/FairScheduler.java
+index 55f4cc7..4c777eb 100644
+--- a/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/fair/FairScheduler.java
++++ b/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/fair/FairScheduler.java
+@@ -1154,8 +1154,8 @@ private void updateRootQueueMetrics() {
+   private boolean shouldAttemptPreemption() {
+     if (preemptionEnabled) {
+       return (preemptionUtilizationThreshold < Math.max(
+-          (float) rootMetrics.getAvailableMB() / clusterCapacity.getMemory(),
+-          (float) rootMetrics.getAvailableVirtualCores() /
++          (float) rootMetrics.getAllocatedMB() / clusterCapacity.getMemory(),
++          (float) rootMetrics.getAllocatedVirtualCores() /
+               clusterCapacity.getVirtualCores()));
+     }
+     return false;
+diff --git a/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/test/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/fair/TestFairSchedulerPreemption.java b/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/test/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/fair/TestFairSchedulerPreemption.java
+index 45c265f..ccd0b62 100644
+--- a/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/test/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/fair/TestFairSchedulerPreemption.java
++++ b/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/test/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/fair/TestFairSchedulerPreemption.java
+@@ -144,6 +144,22 @@ public void testPreemptionWithFreeResources() throws Exception {
+     out.println("</allocations>");
+     out.close();
+ 
++    startResourceManager(0f);
++    // Create node with 4GB memory and 4 vcores
++    registerNodeAndSubmitApp(4 * 1024, 4, 2, 1024);
++
++    // Verify submitting another request triggers preemption
++    createSchedulingRequest(1024, "queueB", "user1", 1, 1);
++    scheduler.update();
++    clock.tick(6);
++
++    ((StubbedFairScheduler) scheduler).resetLastPreemptResources();
++    scheduler.preemptTasksIfNecessary();
++    assertEquals("preemptResources() should have been called", 1024,
++        ((StubbedFairScheduler) scheduler).lastPreemptMemory);
++
++    resourceManager.stop();
++
+     startResourceManager(0.8f);
+     // Create node with 4GB memory and 4 vcores
+     registerNodeAndSubmitApp(4 * 1024, 4, 3, 1024);
+@@ -157,5 +173,21 @@ public void testPreemptionWithFreeResources() throws Exception {
+     scheduler.preemptTasksIfNecessary();
+     assertEquals("preemptResources() should not have been called", -1,
+         ((StubbedFairScheduler) scheduler).lastPreemptMemory);
++
++    resourceManager.stop();
++
++    startResourceManager(0.7f);
++    // Create node with 4GB memory and 4 vcores
++    registerNodeAndSubmitApp(4 * 1024, 4, 3, 1024);
++
++    // Verify submitting another request triggers preemption
++    createSchedulingRequest(1024, "queueB", "user1", 1, 1);
++    scheduler.update();
++    clock.tick(6);
++
++    ((StubbedFairScheduler) scheduler).resetLastPreemptResources();
++    scheduler.preemptTasksIfNecessary();
++    assertEquals("preemptResources() should have been called", 1024,
++        ((StubbedFairScheduler) scheduler).lastPreemptMemory);
+   }
+ }
+-- 
+1.7.0.4
+

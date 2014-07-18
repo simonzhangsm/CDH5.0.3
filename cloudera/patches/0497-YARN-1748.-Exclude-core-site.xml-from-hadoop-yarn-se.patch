@@ -1,0 +1,28 @@
+From b86735eb8adc2e6a2582c44fc5d7890c5d2b2fe0 Mon Sep 17 00:00:00 2001
+From: Sravya Tirukkovalur <sravya@clouera.com>
+Date: Tue, 4 Mar 2014 10:25:58 -0800
+Subject: [PATCH 497/597] YARN-1748. Exclude core-site.xml from hadoop-yarn-server-tests package's jar and thus avoid breaking downstream tests
+
+---
+ .../hadoop-yarn-server-tests/pom.xml               |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
+
+diff --git a/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-tests/pom.xml b/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-tests/pom.xml
+index d523072..28f7768 100644
+--- a/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-tests/pom.xml
++++ b/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-tests/pom.xml
+@@ -138,6 +138,11 @@
+             <goals>
+               <goal>test-jar</goal>
+             </goals>
++            <configuration>
++              <excludes>
++                <exclude>**/core-site.xml</exclude>
++              </excludes>
++            </configuration>
+             <phase>test-compile</phase>
+           </execution>
+         </executions>
+-- 
+1.7.0.4
+

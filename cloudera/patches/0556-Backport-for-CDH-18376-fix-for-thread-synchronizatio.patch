@@ -1,0 +1,27 @@
+From 47cba096a7338aca57bf03dd0248972bdb00f509 Mon Sep 17 00:00:00 2001
+From: Nishkam Ravi <nishkamravi@gmail.com>
+Date: Fri, 25 Apr 2014 16:57:58 -0700
+Subject: [PATCH 556/597] Backport for CDH-18376: fix for thread synchronization issue in Configuration.java exposed by Spark
+
+---
+ .../java/org/apache/hadoop/conf/Configuration.java |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/conf/Configuration.java b/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/conf/Configuration.java
+index 5ae6f21..a29f842 100644
+--- a/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/conf/Configuration.java
++++ b/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/conf/Configuration.java
+@@ -666,9 +666,9 @@ public Configuration(Configuration other) {
+      }
+ 
+      this.updatingResource = new HashMap<String, String[]>(other.updatingResource);
++     this.finalParameters = new HashSet<String>(other.finalParameters);
+    }
+    
+-    this.finalParameters = new HashSet<String>(other.finalParameters);
+     synchronized(Configuration.class) {
+       REGISTRY.put(this, null);
+     }
+-- 
+1.7.0.4
+

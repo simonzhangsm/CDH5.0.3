@@ -1,0 +1,186 @@
+From 9faf1c22609f8c0762aa9b43ca49980384cd2abd Mon Sep 17 00:00:00 2001
+From: Karthik Kambatla <kasha@cloudera.com>
+Date: Wed, 19 Mar 2014 21:25:05 -0700
+Subject: [PATCH 545/597] CLOUDERA-BUILD. Pre-commit version of YARN-1849. (NPE in ResourceTrackerService#registerNodeManager for UAM)
+
+---
+ .../resourcemanager/ResourceTrackerService.java    |   69 +++++++++++++-------
+ .../rmapp/attempt/RMAppAttemptImpl.java            |    6 ++-
+ .../TestResourceTrackerService.java                |   17 ++++-
+ 3 files changed, 65 insertions(+), 27 deletions(-)
+
+diff --git a/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/ResourceTrackerService.java b/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/ResourceTrackerService.java
+index 8a2c539..76159d3 100644
+--- a/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/ResourceTrackerService.java
++++ b/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/ResourceTrackerService.java
+@@ -31,6 +31,7 @@
+ import org.apache.hadoop.service.AbstractService;
+ import org.apache.hadoop.util.VersionUtil;
+ import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
++import org.apache.hadoop.yarn.api.records.Container;
+ import org.apache.hadoop.yarn.api.records.ContainerId;
+ import org.apache.hadoop.yarn.api.records.ContainerState;
+ import org.apache.hadoop.yarn.api.records.ContainerStatus;
+@@ -188,11 +189,53 @@ protected void serviceStop() throws Exception {
+   }
+ 
+   @SuppressWarnings("unchecked")
++  private void handleContainerStatus(ContainerStatus containerStatus) {
++    ApplicationAttemptId appAttemptId =
++        containerStatus.getContainerId().getApplicationAttemptId();
++    RMApp rmApp =
++        rmContext.getRMApps().get(appAttemptId.getApplicationId());
++    if (rmApp == null) {
++      LOG.error("Received finished container : "
++          + containerStatus.getContainerId()
++          + "for unknown application " + appAttemptId.getApplicationId()
++          + " Skipping.");
++      return;
++    }
++
++    RMAppAttempt rmAppAttempt = rmApp.getRMAppAttempt(appAttemptId);
++    if (rmAppAttempt == null) {
++      LOG.warn("Received finished container : "
++          + containerStatus.getContainerId()
++          + ", but the application doesn't know about this attempt "
++          + appAttemptId + " Skipping.");
++      return;
++    }
++
++    Container masterContainer = rmAppAttempt.getMasterContainer();
++    if (masterContainer == null) {
++      if (LOG.isDebugEnabled()) {
++        LOG.debug("Received finished container : "
++            + containerStatus.getContainerId() + " for an application attempt"
++            + " that doesn't have a master container. Ignoring.");
++      }
++      return;
++    }
++
++    if (masterContainer.getId().equals(containerStatus.getContainerId())
++        && containerStatus.getState() == ContainerState.COMPLETE) {
++      // sending master container finished event.
++      RMAppAttemptContainerFinishedEvent evt =
++          new RMAppAttemptContainerFinishedEvent(appAttemptId,
++              containerStatus);
++      rmContext.getDispatcher().getEventHandler().handle(evt);
++    }
++  }
++
++  @SuppressWarnings("unchecked")
+   @Override
+   public RegisterNodeManagerResponse registerNodeManager(
+       RegisterNodeManagerRequest request) throws YarnException,
+       IOException {
+-
+     NodeId nodeId = request.getNodeId();
+     String host = nodeId.getHost();
+     int cmPort = nodeId.getPort();
+@@ -204,29 +247,7 @@ public RegisterNodeManagerResponse registerNodeManager(
+       LOG.info("received container statuses on node manager register :"
+           + request.getContainerStatuses());
+       for (ContainerStatus containerStatus : request.getContainerStatuses()) {
+-        ApplicationAttemptId appAttemptId =
+-            containerStatus.getContainerId().getApplicationAttemptId();
+-        RMApp rmApp =
+-            rmContext.getRMApps().get(appAttemptId.getApplicationId());
+-        if (rmApp != null) {
+-          RMAppAttempt rmAppAttempt = rmApp.getRMAppAttempt(appAttemptId);
+-          if (rmAppAttempt != null) {
+-            if (rmAppAttempt.getMasterContainer().getId()
+-                .equals(containerStatus.getContainerId())
+-                && containerStatus.getState() == ContainerState.COMPLETE) {
+-              // sending master container finished event.
+-              RMAppAttemptContainerFinishedEvent evt =
+-                  new RMAppAttemptContainerFinishedEvent(appAttemptId,
+-                      containerStatus);
+-              rmContext.getDispatcher().getEventHandler().handle(evt);
+-            }
+-          }
+-        } else {
+-          LOG.error("Received finished container :"
+-              + containerStatus.getContainerId()
+-              + " for non existing application :"
+-              + appAttemptId.getApplicationId());
+-        }
++        handleContainerStatus(containerStatus);
+       }
+     }
+     RegisterNodeManagerResponse response = recordFactory
+diff --git a/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/rmapp/attempt/RMAppAttemptImpl.java b/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/rmapp/attempt/RMAppAttemptImpl.java
+index cd5c9d3..93ca119 100644
+--- a/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/rmapp/attempt/RMAppAttemptImpl.java
++++ b/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/rmapp/attempt/RMAppAttemptImpl.java
+@@ -35,9 +35,11 @@
+ 
+ import javax.crypto.SecretKey;
+ 
++import com.google.common.annotations.VisibleForTesting;
+ import org.apache.commons.lang.StringUtils;
+ import org.apache.commons.logging.Log;
+ import org.apache.commons.logging.LogFactory;
++import org.apache.hadoop.classification.InterfaceAudience;
+ import org.apache.hadoop.conf.Configuration;
+ import org.apache.hadoop.security.Credentials;
+ import org.apache.hadoop.security.UserGroupInformation;
+@@ -622,7 +624,9 @@ public Container getMasterContainer() {
+     }
+   }
+ 
+-  private void setMasterContainer(Container container) {
++  @InterfaceAudience.Private
++  @VisibleForTesting
++  public void setMasterContainer(Container container) {
+     masterContainer = container;
+   }
+ 
+diff --git a/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/test/java/org/apache/hadoop/yarn/server/resourcemanager/TestResourceTrackerService.java b/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/test/java/org/apache/hadoop/yarn/server/resourcemanager/TestResourceTrackerService.java
+index da70b04..ee5a250 100644
+--- a/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/test/java/org/apache/hadoop/yarn/server/resourcemanager/TestResourceTrackerService.java
++++ b/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/test/java/org/apache/hadoop/yarn/server/resourcemanager/TestResourceTrackerService.java
+@@ -49,6 +49,7 @@
+ import org.apache.hadoop.yarn.server.api.protocolrecords.RegisterNodeManagerResponse;
+ import org.apache.hadoop.yarn.server.api.records.NodeAction;
+ import org.apache.hadoop.yarn.server.resourcemanager.rmapp.RMApp;
++import org.apache.hadoop.yarn.server.resourcemanager.rmapp.attempt.RMAppAttemptImpl;
+ import org.apache.hadoop.yarn.server.resourcemanager.scheduler.QueueMetrics;
+ import org.apache.hadoop.yarn.server.resourcemanager.scheduler.event.SchedulerEvent;
+ import org.apache.hadoop.yarn.server.utils.BuilderUtils;
+@@ -468,6 +469,9 @@ private void checkUnealthyNMCount(MockRM rm, MockNM nm1, boolean health,
+         ClusterMetrics.getMetrics().getUnhealthyNMs());
+   }
+ 
++  /**
++   * Test verifies node registration with completed containers
++   */
+   @Test
+   public void testNodeRegistrationWithContainers() throws Exception {
+     MockRM rm = new MockRM();
+@@ -478,13 +482,22 @@ public void testNodeRegistrationWithContainers() throws Exception {
+     MockNM nm = rm.registerNode("host1:1234", 8192);
+     nm.nodeHeartbeat(true);
+ 
+-    // Register node with some container statuses
++    // Case 1: AppAttemptId is null
+     ContainerStatus status = ContainerStatus.newInstance(
+         ContainerId.newInstance(ApplicationAttemptId.newInstance(
+             app.getApplicationId(), 2), 1),
+         ContainerState.COMPLETE, "Dummy Completed", 0);
++    nm.registerNode(Collections.singletonList(status));
++    assertEquals("Incorrect number of nodes", 1,
++        rm.getRMContext().getRMNodes().size());
+ 
+-    // The following shouldn't throw NPE
++    // Case 2: Master container is null
++    RMAppAttemptImpl currentAttempt =
++        (RMAppAttemptImpl) app.getCurrentAppAttempt();
++    currentAttempt.setMasterContainer(null);
++    status = ContainerStatus.newInstance(
++        ContainerId.newInstance(currentAttempt.getAppAttemptId(), 0),
++        ContainerState.COMPLETE, "Dummy Completed", 0);
+     nm.registerNode(Collections.singletonList(status));
+     assertEquals("Incorrect number of nodes", 1,
+         rm.getRMContext().getRMNodes().size());
+-- 
+1.7.0.4
+

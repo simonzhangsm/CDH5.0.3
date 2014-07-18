@@ -1,0 +1,27 @@
+From 449a5d5f5a6105db2576ee136da1d8ae8f1e3938 Mon Sep 17 00:00:00 2001
+From: Robert Kanter <rkanter@cloudera.com>
+Date: Fri, 14 Mar 2014 11:23:01 -0700
+Subject: [PATCH 539/597] CLOUDERA-BUILD. Revert "YARN-713. Fixing missing update on branch-2 and branch-2.4."
+
+This reverts commit b253be7cbbccf25e29c466d98dbf02ebebe60a04.
+---
+ .../resourcemanager/scheduler/Allocation.java      |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+diff --git a/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/Allocation.java b/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/Allocation.java
+index 7b49b17..8905504 100644
+--- a/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/Allocation.java
++++ b/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/src/main/java/org/apache/hadoop/yarn/server/resourcemanager/scheduler/Allocation.java
+@@ -30,6 +30,9 @@
+ 
+ public class Allocation {
+   
++  private final RecordFactory recordFactory =
++      RecordFactoryProvider.getRecordFactory(null);
++
+   final List<Container> containers;
+   final Resource resourceLimit;
+   final Set<ContainerId> strictContainers;
+-- 
+1.7.0.4
+
