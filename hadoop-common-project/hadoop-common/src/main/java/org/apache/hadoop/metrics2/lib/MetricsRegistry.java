@@ -18,6 +18,7 @@
 
 package org.apache.hadoop.metrics2.lib;
 
+import java.util.HashMap;
 import java.util.Collection;
 import java.util.Map;
 
@@ -176,6 +177,30 @@ public class MetricsRegistry {
   public synchronized MutableGaugeLong newGauge(MetricsInfo info, long iVal) {
     checkMetricName(info.name());
     MutableGaugeLong ret = new MutableGaugeLong(info, iVal);
+    metricsMap.put(info.name(), ret);
+    return ret;
+  }
+
+  /**
+   * Create a mutable HashMap record
+   * @param name  of the metric
+   * @param desc  metric description
+   * @param iVal  initial value
+   * @return a new gauge object
+   */
+  public MutableHashMap newHashMap(String name, String desc) {
+    return newHashMap(Interns.info(name, desc));
+  }
+
+  /**
+   * Create a mutable HashMap record
+   * @param info  metadata of the metric
+   * @param iVal  initial value
+   * @return a new gauge object
+   */
+  public synchronized MutableHashMap newHashMap(MetricsInfo info) {
+    checkMetricName(info.name());
+    MutableHashMap ret = new MutableHashMap(info);
     metricsMap.put(info.name(), ret);
     return ret;
   }

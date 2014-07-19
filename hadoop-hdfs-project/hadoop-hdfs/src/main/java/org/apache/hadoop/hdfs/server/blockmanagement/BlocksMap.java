@@ -23,7 +23,6 @@ import org.apache.hadoop.hdfs.protocol.Block;
 import org.apache.hadoop.hdfs.server.protocol.DatanodeStorage;
 import org.apache.hadoop.util.GSet;
 import org.apache.hadoop.util.LightWeightGSet;
-import org.apache.hadoop.util.LightWeightGSet.SetIterator;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
@@ -215,7 +214,7 @@ class BlocksMap {
    */
   BlockInfo replaceBlock(BlockInfo newBlock) {
     BlockInfo currentBlock = blocks.get(newBlock);
-    assert currentBlock != null : "the block if not in blocksMap";
+    assert currentBlock != null : "the block is not in blocksMap";
     // replace block in data-node lists
     for(int idx = currentBlock.numNodes()-1; idx >= 0; idx--) {
       DatanodeDescriptor dn = currentBlock.getDatanode(idx);

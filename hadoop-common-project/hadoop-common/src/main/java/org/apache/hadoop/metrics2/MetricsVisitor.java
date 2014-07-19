@@ -18,6 +18,8 @@
 
 package org.apache.hadoop.metrics2;
 
+import java.util.HashMap;
+
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.classification.InterfaceStability;
 
@@ -33,6 +35,13 @@ public interface MetricsVisitor {
    * @param value of the metric
    */
   public void gauge(MetricsInfo info, int value);
+
+  /**
+   * Callback for hashmap<String, Number> value metrics
+   * @param info  the metric info
+   * @param value of the metric
+   */
+  public void hashmap(MetricsInfo info, HashMap<String, Number> value);
 
   /**
    * Callback for long value gauges

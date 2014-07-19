@@ -40,6 +40,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.jsp.JspWriter;
 
+import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.ha.HAServiceProtocol.HAServiceState;
 import org.apache.hadoop.hdfs.DFSConfigKeys;
@@ -74,7 +75,7 @@ import org.znerd.xmlenc.XMLOutputter;
 
 import com.google.common.base.Preconditions;
 
-class NamenodeJspHelper {
+public class NamenodeJspHelper {
   static String fraction2String(double value) {
     return StringUtils.format("%.2f", value);
   }

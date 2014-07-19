@@ -18,6 +18,7 @@
 
 package org.apache.hadoop.metrics2.impl;
 
+import java.util.HashMap;
 import java.util.Collections;
 import java.util.List;
 
@@ -129,6 +130,15 @@ class MetricsRecordBuilderImpl extends MetricsRecordBuilder {
       metrics.add(new MetricGaugeDouble(info, value));
     }
     return this;
+  }
+
+  @Override
+  public MetricsRecordBuilder addHashMap(MetricsInfo info, HashMap<String, Number> val){
+	  if (acceptable && (metricFilter == null ||
+		        metricFilter.accepts(info.name()))) {
+		      metrics.add(new MetricHashMap(info,val));
+		    }
+	  return this;
   }
 
   @Override

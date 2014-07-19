@@ -383,7 +383,7 @@ int mkdirs(const char* path, mode_t perm) {
         return -1;
     }
 
-    char npath[MAXPATHLEN];
+    char npath[PATH_MAX];
     memset(npath, 0x00, sizeof(npath));
     strcpy(npath, path);
     strcpy(npath, dirname(npath));

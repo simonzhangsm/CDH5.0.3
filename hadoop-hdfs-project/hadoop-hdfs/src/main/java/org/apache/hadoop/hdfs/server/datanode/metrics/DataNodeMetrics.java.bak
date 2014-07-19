@@ -218,9 +218,8 @@ public class DataNodeMetrics {
     bytesRead.incr(delta);
   }
 
-	public void incrBlocksRead(String key) {
+  public void incrBlocksRead() {
     blocksRead.incr();
-		incrBlocksReadRecord(key);
   }
 
   public void incrBlocksReadRecord(String key) {
@@ -269,9 +268,8 @@ public class DataNodeMetrics {
   }
 
   /** Increment for getBlockLocalPathInfo calls */
-	public void incrBlocksGetLocalPathInfo(String key) {
+  public void incrBlocksGetLocalPathInfo() {
     blocksGetLocalPathInfo.incr();
-		incrBlocksReadRecord(key);
   }
 
   public void addSendDataPacketBlockedOnNetworkNanos(long latencyNanos) {
