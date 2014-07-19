@@ -1,0 +1,858 @@
+diff --git a/Makefile b/Makefile
+new file mode 100644
+index 0000000..a17d84d
+--- /dev/null
++++ b/Makefile
+@@ -0,0 +1,35 @@
++clean:
++	mvn clean
++
++compile:
++	mvn compile -Pnative -DskipTests
++
++test:
++	mvn test -Pnative 
++
++package:
++	mvn package -Pdist -DskipTests -Dtar
++
++native:
++	mvn package -Pdist,native -DskipTests -Dtar -X
++
++source:
++	mvn package -Psrc -DskipTests
++
++all:
++	mvn package install -Pdist,native,docs,src -DskipTests -Dtar
++
++findbugs:
++	mvn compile findbugs:findbugs -DskipTests
++
++checkstyle:
++	mvn compile checkstyle:checkstyle -DskipTests
++
++install:
++	mvn install -DskipTests
++
++deploy:
++	mvn deploy -DskipTests
++
++eclipse:
++	mvn eclipse:eclipse -DdownloadSources=true -DdownloadJavadocs=true -DskipTests
+diff --git a/hadoop-assemblies/pom.xml b/hadoop-assemblies/pom.xml
+index ddcc675..e549fef 100644
+--- a/hadoop-assemblies/pom.xml
++++ b/hadoop-assemblies/pom.xml
+@@ -29,7 +29,7 @@
+   <groupId>org.apache.hadoop</groupId>
+   <artifactId>hadoop-assemblies</artifactId>
+   <version>2.3.0-cdh5.0.3</version>
+-  <name>Apache Hadoop Assemblies</name>
++  <name>hadoop-assemblies</name>
+   <description>Apache Hadoop Assemblies</description>
+ 
+   <properties>
+diff --git a/hadoop-client/pom.xml b/hadoop-client/pom.xml
+index 9af37d5..8ed3742 100644
+--- a/hadoop-client/pom.xml
++++ b/hadoop-client/pom.xml
+@@ -27,7 +27,7 @@
+   <packaging>jar</packaging>
+ 
+   <description>Apache Hadoop Client</description>
+-  <name>Apache Hadoop Client</name>
++  <name>hadoop-client</name>
+ 
+ <properties>
+    <hadoop.component>client</hadoop.component>
+diff --git a/hadoop-common-project/hadoop-annotations/pom.xml b/hadoop-common-project/hadoop-annotations/pom.xml
+index 14065cd..b4eda6e 100644
+--- a/hadoop-common-project/hadoop-annotations/pom.xml
++++ b/hadoop-common-project/hadoop-annotations/pom.xml
+@@ -27,7 +27,7 @@
+   <artifactId>hadoop-annotations</artifactId>
+   <version>2.3.0-cdh5.0.3</version>
+   <description>Apache Hadoop Annotations</description>
+-  <name>Apache Hadoop Annotations</name>
++  <name>hadoop-annotations</name>
+   <packaging>jar</packaging>
+ 
+   <dependencies>
+diff --git a/hadoop-common-project/hadoop-auth-examples/pom.xml b/hadoop-common-project/hadoop-auth-examples/pom.xml
+index 1cc9898..c098bac 100644
+--- a/hadoop-common-project/hadoop-auth-examples/pom.xml
++++ b/hadoop-common-project/hadoop-auth-examples/pom.xml
+@@ -28,7 +28,7 @@
+   <version>2.3.0-cdh5.0.3</version>
+   <packaging>war</packaging>
+ 
+-  <name>Apache Hadoop Auth Examples</name>
++  <name>hadoop-auth-examples</name>
+   <description>Apache Hadoop Auth Examples - Java HTTP SPNEGO</description>
+ 
+   <dependencies>
+@@ -65,6 +65,7 @@
+         <artifactId>maven-war-plugin</artifactId>
+         <configuration>
+           <warName>hadoop-auth-examples</warName>
++          <version>3.1</version>
+         </configuration>
+       </plugin>
+       <plugin>
+diff --git a/hadoop-common-project/hadoop-auth/pom.xml b/hadoop-common-project/hadoop-auth/pom.xml
+index ba8ae16..d82bb06 100644
+--- a/hadoop-common-project/hadoop-auth/pom.xml
++++ b/hadoop-common-project/hadoop-auth/pom.xml
+@@ -28,7 +28,7 @@
+   <version>2.3.0-cdh5.0.3</version>
+   <packaging>jar</packaging>
+ 
+-  <name>Apache Hadoop Auth</name>
++  <name>hadoop-auth</name>
+   <description>Apache Hadoop Auth - Java HTTP SPNEGO</description>
+ 
+   <properties>
+@@ -50,11 +50,6 @@
+     <dependency>
+       <groupId>org.mockito</groupId>
+       <artifactId>mockito-all</artifactId>
+-      <scope>test</scope>
+-    </dependency>
+-    <dependency>
+-      <groupId>org.mortbay.jetty</groupId>
+-      <artifactId>jetty-util</artifactId>
+       <scope>test</scope>
+     </dependency>
+     <dependency>
+diff --git a/hadoop-common-project/hadoop-common/pom.xml b/hadoop-common-project/hadoop-common/pom.xml
+index a81442f..2a575ab 100644
+--- a/hadoop-common-project/hadoop-common/pom.xml
++++ b/hadoop-common-project/hadoop-common/pom.xml
+@@ -27,7 +27,7 @@
+   <artifactId>hadoop-common</artifactId>
+   <version>2.3.0-cdh5.0.3</version>
+   <description>Apache Hadoop Common</description>
+-  <name>Apache Hadoop Common</name>
++  <name>hadoop-common</name>
+   <packaging>jar</packaging>
+ 
+   <properties>
+diff --git a/hadoop-common-project/hadoop-common/src/main/native/src/org/apache/hadoop/security/JniBasedUnixGroupsNetgroupMapping.c b/hadoop-common-project/hadoop-common/src/main/native/src/org/apache/hadoop/security/JniBasedUnixGroupsNetgroupMapping.c
+index 1177d72..51ea533 100644
+--- a/hadoop-common-project/hadoop-common/src/main/native/src/org/apache/hadoop/security/JniBasedUnixGroupsNetgroupMapping.c
++++ b/hadoop-common-project/hadoop-common/src/main/native/src/org/apache/hadoop/security/JniBasedUnixGroupsNetgroupMapping.c
+@@ -73,8 +73,10 @@
+   // was successful or not (as long as it was called we need to call
+   // endnetgrent)
+   setnetgrentCalledFlag = 1;
+-#ifndef __FreeBSD__
++#if ( !defined(__FreeBSD__) && !defined(__APPLE__) )
+   if(setnetgrent(cgroup) == 1) {
++#else
++  setnetgrent(cgroup);
+ #endif
+     current = NULL;
+     // three pointers are for host, user, domain, we only care
+@@ -90,7 +92,7 @@
+         userListSize++;
+       }
+     }
+-#ifndef __FreeBSD__
++#if ( !defined(__FreeBSD__) && !defined(__APPLE__) )
+   }
+ #endif
+ 
+diff --git a/hadoop-common-project/hadoop-minikdc/pom.xml b/hadoop-common-project/hadoop-minikdc/pom.xml
+index b0167c5..0dc1c1c 100644
+--- a/hadoop-common-project/hadoop-minikdc/pom.xml
++++ b/hadoop-common-project/hadoop-minikdc/pom.xml
+@@ -26,7 +26,7 @@
+   <artifactId>hadoop-minikdc</artifactId>
+   <version>2.3.0-cdh5.0.3</version>
+   <description>Apache Hadoop MiniKDC</description>
+-  <name>Apache Hadoop MiniKDC</name>
++  <name>hadoop-minikdc</name>
+   <packaging>jar</packaging>
+ 
+   <dependencies>
+diff --git a/hadoop-common-project/hadoop-nfs/pom.xml b/hadoop-common-project/hadoop-nfs/pom.xml
+index 962aef7..b67eea5 100644
+--- a/hadoop-common-project/hadoop-nfs/pom.xml
++++ b/hadoop-common-project/hadoop-nfs/pom.xml
+@@ -28,7 +28,7 @@
+   <version>2.3.0-cdh5.0.3</version>
+   <packaging>jar</packaging>
+ 
+-  <name>Apache Hadoop NFS</name>
++  <name>hadoop-nfs</name>
+   <description>Apache Hadoop NFS library</description>
+ 
+   <properties>
+diff --git a/hadoop-common-project/pom.xml b/hadoop-common-project/pom.xml
+index 2250891..af58f8e 100644
+--- a/hadoop-common-project/pom.xml
++++ b/hadoop-common-project/pom.xml
+@@ -27,7 +27,7 @@
+   <artifactId>hadoop-common-project</artifactId>
+   <version>2.3.0-cdh5.0.3</version>
+   <description>Apache Hadoop Common Project</description>
+-  <name>Apache Hadoop Common Project</name>
++  <name>hadoop-common-project</name>
+   <packaging>pom</packaging>
+ 
+   <modules>
+diff --git a/hadoop-dist/pom.xml b/hadoop-dist/pom.xml
+index db4c67b..efb6c02 100644
+--- a/hadoop-dist/pom.xml
++++ b/hadoop-dist/pom.xml
+@@ -27,7 +27,7 @@
+   <artifactId>hadoop-dist</artifactId>
+   <version>2.3.0-cdh5.0.3</version>
+   <description>Apache Hadoop Distribution</description>
+-  <name>Apache Hadoop Distribution</name>
++  <name>hadoop-dist</name>
+   <packaging>jar</packaging>
+ 
+   <!-- Using dependencies to ensure this module is the last one -->
+diff --git a/hadoop-hdfs-project/hadoop-hdfs-httpfs/pom.xml b/hadoop-hdfs-project/hadoop-hdfs-httpfs/pom.xml
+index 8bc2afc..706ac7d 100644
+--- a/hadoop-hdfs-project/hadoop-hdfs-httpfs/pom.xml
++++ b/hadoop-hdfs-project/hadoop-hdfs-httpfs/pom.xml
+@@ -30,7 +30,7 @@
+   <version>2.3.0-cdh5.0.3</version>
+   <packaging>war</packaging>
+ 
+-  <name>Apache Hadoop HttpFS</name>
++  <name>hadoop-hdfs-httpfs</name>
+   <description>Apache Hadoop HttpFS</description>
+ 
+   <properties>
+@@ -416,6 +416,9 @@
+             </configuration>
+           </execution>
+         </executions>
++        <configuration>
++           <version>3.1</version>
++        </configuration>
+       </plugin>
+       <plugin>
+         <groupId>org.codehaus.mojo</groupId>
+diff --git a/hadoop-hdfs-project/hadoop-hdfs-nfs/pom.xml b/hadoop-hdfs-project/hadoop-hdfs-nfs/pom.xml
+index 5d25ea6..80bf3ec 100644
+--- a/hadoop-hdfs-project/hadoop-hdfs-nfs/pom.xml
++++ b/hadoop-hdfs-project/hadoop-hdfs-nfs/pom.xml
+@@ -27,7 +27,7 @@
+   <artifactId>hadoop-hdfs-nfs</artifactId>
+   <version>2.3.0-cdh5.0.3</version>
+   <description>Apache Hadoop HDFS-NFS</description>
+-  <name>Apache Hadoop HDFS-NFS</name>
++  <name>hadoop-hdfs-nfs</name>
+   <packaging>jar</packaging>
+ 
+   <dependencies>
+diff --git a/hadoop-hdfs-project/hadoop-hdfs/pom.xml b/hadoop-hdfs-project/hadoop-hdfs/pom.xml
+index f26fb7d..06a26de 100644
+--- a/hadoop-hdfs-project/hadoop-hdfs/pom.xml
++++ b/hadoop-hdfs-project/hadoop-hdfs/pom.xml
+@@ -27,7 +27,7 @@
+   <artifactId>hadoop-hdfs</artifactId>
+   <version>2.3.0-cdh5.0.3</version>
+   <description>Apache Hadoop HDFS</description>
+-  <name>Apache Hadoop HDFS</name>
++  <name>hadoop-hdfs</name>
+   <packaging>jar</packaging>
+ 
+   <properties>
+@@ -593,7 +593,7 @@
+                     </exec>
+                     <!-- The second make is a workaround for HADOOP-9215.  It can
+                          be removed when version 2.6 of cmake is no longer supported . -->
+-                    <exec executable="make" dir="${project.build.directory}/native" failonerror="true"></exec>
++                    <!-- exec executable="make" dir="${project.build.directory}/native" failonerror="true"></exec -->
+                   </target>
+                 </configuration>
+               </execution>
+diff --git a/hadoop-hdfs-project/hadoop-hdfs/src/contrib/bkjournal/pom.xml b/hadoop-hdfs-project/hadoop-hdfs/src/contrib/bkjournal/pom.xml
+index 5cc7a59..4216d1a 100644
+--- a/hadoop-hdfs-project/hadoop-hdfs/src/contrib/bkjournal/pom.xml
++++ b/hadoop-hdfs-project/hadoop-hdfs/src/contrib/bkjournal/pom.xml
+@@ -28,7 +28,7 @@
+   <artifactId>hadoop-hdfs-bkjournal</artifactId>
+   <version>2.3.0-cdh5.0.3</version>
+   <description>Apache Hadoop HDFS BookKeeper Journal</description>
+-  <name>Apache Hadoop HDFS BookKeeper Journal</name>
++  <name>hadoop-hdfs-bkjournal</name>
+   <packaging>jar</packaging>
+ 
+   <properties>
+diff --git a/hadoop-hdfs-project/hadoop-hdfs/src/main/bin/hadoop.debug b/hadoop-hdfs-project/hadoop-hdfs/src/main/bin/hadoop.debug
+new file mode 100644
+index 0000000..30b415f
+--- /dev/null
++++ b/hadoop-hdfs-project/hadoop-hdfs/src/main/bin/hadoop.debug
+@@ -0,0 +1 @@
++datanode
+\ No newline at end of file
+diff --git a/hadoop-hdfs-project/hadoop-hdfs/src/main/bin/hdfs b/hadoop-hdfs-project/hadoop-hdfs/src/main/bin/hdfs
+index 290764a..e434a41 100755
+--- a/hadoop-hdfs-project/hadoop-hdfs/src/main/bin/hdfs
++++ b/hadoop-hdfs-project/hadoop-hdfs/src/main/bin/hdfs
+@@ -33,6 +33,29 @@
+ HADOOP_LIBEXEC_DIR=${HADOOP_LIBEXEC_DIR:-$DEFAULT_LIBEXEC_DIR}
+ . $HADOOP_LIBEXEC_DIR/hdfs-config.sh
+ 
++function choose_debug_port(){
++  debug_port_base=11000
++  while [ -z "$DEBUG_PORT" ]
++  do 
++     if [ "$(netstat -tln | grep $debug_port_base |wc -l)" -eq 0 ]
++     then
++        DEBUG_PORT=$debug_port_base
++     else
++        debug_port_base=$(($debug_port_base+1))
++     fi
++  done
++} 
++
++debug_file="$bin/hadoop.debug"
++choose_debug_port
++
++function is_debug_enabled(){
++  if [ -f "$debug_file" ]
++  then 
++     echo $(cat $debug_file | grep $1)
++  fi   
++} 
++
+ function print_usage(){
+   echo "Usage: hdfs [--config confdir] COMMAND"
+   echo "       where COMMAND is one of:"
+@@ -187,6 +210,13 @@
+ 
+ HADOOP_OPTS="$HADOOP_OPTS -Dhadoop.security.logger=${HADOOP_SECURITY_LOGGER:-INFO,NullAppender}"
+ 
++if [ $(is_debug_enabled $COMMAND) ]
++then
++   echo "debug for $COMMAND is enabled, port:$DEBUG_PORT"
++   export HADOOP_OPTS="$HADOOP_OPTS -Xdebug -Xnoagent -Djava.compiler=NONE -Xrunjdwp:transport=dt_socket,address=$DEBUG_PORT,suspend=y,server=y "
++fi
++
++
+ # Check to see if we should start a secure datanode
+ if [ "$starting_secure_dn" = "true" ]; then
+   if [ "$HADOOP_PID_DIR" = "" ]; then
+diff --git a/hadoop-hdfs-project/hadoop-hdfs/src/main/conf/hadoop-metrics2.properties b/hadoop-hdfs-project/hadoop-hdfs/src/main/conf/hadoop-metrics2.properties
+index c3ffe31..160d676 100644
+--- a/hadoop-hdfs-project/hadoop-hdfs/src/main/conf/hadoop-metrics2.properties
++++ b/hadoop-hdfs-project/hadoop-hdfs/src/main/conf/hadoop-metrics2.properties
+@@ -27,7 +27,7 @@
+ # Specifying a special sampling period for namenode:
+ #namenode.sink.*.period=8
+ 
+-#datanode.sink.file.filename=datanode-metrics.out
++datanode.sink.file.filename=datanode-metrics.out
+ 
+ # the following example split metrics of different
+ # context to different sinks (in this case files)
+diff --git a/hadoop-hdfs-project/hadoop-hdfs/src/main/conf/hdfs-site.xml b/hadoop-hdfs-project/hadoop-hdfs/src/main/conf/hdfs-site.xml
+index 50ec146..5bbfb70 100644
+--- a/hadoop-hdfs-project/hadoop-hdfs/src/main/conf/hdfs-site.xml
++++ b/hadoop-hdfs-project/hadoop-hdfs/src/main/conf/hdfs-site.xml
+@@ -18,4 +18,17 @@
+ 
+ <configuration>
+ 
++  <property>
++    <name>dfs.replication</name>
++    <value>1</value>
++  </property>
++  <property>
++    <name>dfs.namenode.name.dir</name>
++    <value>file:/data/hdfs/namenode</value>
++  </property>
++  <property>
++    <name>dfs.datanode.data.dir</name>
++    <value>file:/data/hdfs/datanode</value>
++  </property>
++
+ </configuration>
+diff --git a/hadoop-hdfs-project/hadoop-hdfs/src/main/java/org/apache/hadoop/hdfs/server/blockmanagement/BlockManager.java b/hadoop-hdfs-project/hadoop-hdfs/src/main/java/org/apache/hadoop/hdfs/server/blockmanagement/BlockManager.java
+index 404a734..8727e58 100644
+--- a/hadoop-hdfs-project/hadoop-hdfs/src/main/java/org/apache/hadoop/hdfs/server/blockmanagement/BlockManager.java
++++ b/hadoop-hdfs-project/hadoop-hdfs/src/main/java/org/apache/hadoop/hdfs/server/blockmanagement/BlockManager.java
+@@ -2233,12 +2233,12 @@
+                                boolean logEveryBlock)
+   throws IOException {
+     assert block != null && namesystem.hasWriteLock();
+-    BlockInfo storedBlock;
++    BlockInfo storedBlock = block;
+     if (block instanceof BlockInfoUnderConstruction) {
+       //refresh our copy in case the block got completed in another thread
+       storedBlock = blocksMap.getStoredBlock(block);
+-    } else {
+-      storedBlock = block;
++   // } else {
++   //   storedBlock = block;
+     }
+     if (storedBlock == null || storedBlock.getBlockCollection() == null) {
+       // If this block does not belong to anyfile, then we are done.
+diff --git a/hadoop-hdfs-project/pom.xml b/hadoop-hdfs-project/pom.xml
+index fa0d31e..cbb28e6 100644
+--- a/hadoop-hdfs-project/pom.xml
++++ b/hadoop-hdfs-project/pom.xml
+@@ -27,7 +27,7 @@
+   <artifactId>hadoop-hdfs-project</artifactId>
+   <version>2.3.0-cdh5.0.3</version>
+   <description>Apache Hadoop HDFS Project</description>
+-  <name>Apache Hadoop HDFS Project</name>
++  <name>hadoop-hdfs-project</name>
+   <packaging>pom</packaging>
+ 
+   <modules>
+diff --git a/hadoop-mapreduce-project/hadoop-mapreduce-examples/pom.xml b/hadoop-mapreduce-project/hadoop-mapreduce-examples/pom.xml
+index a2709f6..f24d0d8 100644
+--- a/hadoop-mapreduce-project/hadoop-mapreduce-examples/pom.xml
++++ b/hadoop-mapreduce-project/hadoop-mapreduce-examples/pom.xml
+@@ -27,7 +27,7 @@
+   <artifactId>hadoop-mapreduce-examples</artifactId>
+   <version>2.3.0-cdh5.0.3</version>
+   <description>Apache Hadoop MapReduce Examples</description>
+-  <name>Apache Hadoop MapReduce Examples</name>
++  <name>hadoop-mapreduce-examples</name>
+   <packaging>jar</packaging>
+ 
+   <properties>
+diff --git a/hadoop-maven-plugins/pom.xml b/hadoop-maven-plugins/pom.xml
+index 1ab632f..f013b9c 100644
+--- a/hadoop-maven-plugins/pom.xml
++++ b/hadoop-maven-plugins/pom.xml
+@@ -25,7 +25,6 @@
+   <groupId>org.apache.hadoop</groupId>
+   <artifactId>hadoop-maven-plugins</artifactId>
+   <packaging>maven-plugin</packaging>
+-  <name>Apache Hadoop Maven Plugins</name>
+   <properties>
+     <maven.dependency.version>3.0</maven.dependency.version>
+   </properties>
+@@ -84,4 +83,6 @@
+       </plugin>
+     </plugins>
+   </build>
++  <description>Apache Hadoop Maven Plugins</description>
++  <name>hadoop-maven-plugins</name>
+ </project>
+diff --git a/hadoop-minicluster/pom.xml b/hadoop-minicluster/pom.xml
+index 03a5cff..6e047aa 100644
+--- a/hadoop-minicluster/pom.xml
++++ b/hadoop-minicluster/pom.xml
+@@ -27,7 +27,7 @@
+   <packaging>jar</packaging>
+ 
+   <description>Apache Hadoop Mini-Cluster</description>
+-  <name>Apache Hadoop Mini-Cluster</name>
++  <name>hadoop-minicluster</name>
+ 
+   <dependencies>
+     <dependency>
+diff --git a/hadoop-project-dist/pom.xml b/hadoop-project-dist/pom.xml
+index 5ae0799..eb57f72 100644
+--- a/hadoop-project-dist/pom.xml
++++ b/hadoop-project-dist/pom.xml
+@@ -27,7 +27,7 @@
+   <artifactId>hadoop-project-dist</artifactId>
+   <version>2.3.0-cdh5.0.3</version>
+   <description>Apache Hadoop Project Dist POM</description>
+-  <name>Apache Hadoop Project Dist POM</name>
++  <name>hadoop-project-dist</name>
+   <packaging>pom</packaging>
+ 
+   <properties>
+diff --git a/hadoop-project/pom.xml b/hadoop-project/pom.xml
+index 3aa80cc..18c9a99 100644
+--- a/hadoop-project/pom.xml
++++ b/hadoop-project/pom.xml
+@@ -26,7 +26,7 @@
+   <artifactId>hadoop-project</artifactId>
+   <version>2.3.0-cdh5.0.3</version>
+   <description>Apache Hadoop Project POM</description>
+-  <name>Apache Hadoop Project POM</name>
++  <name>hadoop-project</name>
+   <packaging>pom</packaging>
+ 
+   <properties>
+@@ -1094,8 +1094,8 @@
+             <artifactId>maven-compiler-plugin</artifactId>
+             <configuration>
+               <fork>true</fork>
+-              <source>1.6</source>
+-              <target>1.6</target>
++              <source>1.7</source>
++              <target>1.7</target>
+               <compilerArguments>
+                 <Xlint/>
+                 <Xmaxwarns>9999</Xmaxwarns>
+diff --git a/hadoop-tools/hadoop-archives/pom.xml b/hadoop-tools/hadoop-archives/pom.xml
+index 8a24b14..530d6ca 100644
+--- a/hadoop-tools/hadoop-archives/pom.xml
++++ b/hadoop-tools/hadoop-archives/pom.xml
+@@ -27,7 +27,7 @@
+   <artifactId>hadoop-archives</artifactId>
+   <version>2.3.0-cdh5.0.3</version>
+   <description>Apache Hadoop Archives</description>
+-  <name>Apache Hadoop Archives</name>
++  <name>hadoop-archives</name>
+   <packaging>jar</packaging>
+ 
+   <properties>
+diff --git a/hadoop-tools/hadoop-datajoin/pom.xml b/hadoop-tools/hadoop-datajoin/pom.xml
+index b28ff39..4f3b2e5 100644
+--- a/hadoop-tools/hadoop-datajoin/pom.xml
++++ b/hadoop-tools/hadoop-datajoin/pom.xml
+@@ -24,7 +24,7 @@
+   <artifactId>hadoop-datajoin</artifactId>
+   <version>2.3.0-cdh5.0.3</version>
+   <description>Apache Hadoop Data Join</description>
+-  <name>Apache Hadoop Data Join</name>
++  <name>hadoop-datajoin</name>
+   <packaging>jar</packaging>
+ 
+   <properties>
+diff --git a/hadoop-tools/hadoop-distcp/pom.xml b/hadoop-tools/hadoop-distcp/pom.xml
+index d8917a1..edf8286 100644
+--- a/hadoop-tools/hadoop-distcp/pom.xml
++++ b/hadoop-tools/hadoop-distcp/pom.xml
+@@ -27,7 +27,7 @@
+   <artifactId>hadoop-distcp</artifactId>
+   <version>2.3.0-cdh5.0.3</version>
+   <description>Apache Hadoop Distributed Copy</description>
+-  <name>Apache Hadoop Distributed Copy</name>
++  <name>hadoop-distcp</name>
+   <packaging>jar</packaging>
+ 
+   <properties>
+diff --git a/hadoop-tools/hadoop-extras/pom.xml b/hadoop-tools/hadoop-extras/pom.xml
+index 8bb4de8..0b16982 100644
+--- a/hadoop-tools/hadoop-extras/pom.xml
++++ b/hadoop-tools/hadoop-extras/pom.xml
+@@ -27,7 +27,7 @@
+   <artifactId>hadoop-extras</artifactId>
+   <version>2.3.0-cdh5.0.3</version>
+   <description>Apache Hadoop Extras</description>
+-  <name>Apache Hadoop Extras</name>
++  <name>hadoop-extras</name>
+   <packaging>jar</packaging>
+ 
+   <properties>
+diff --git a/hadoop-tools/hadoop-gridmix/pom.xml b/hadoop-tools/hadoop-gridmix/pom.xml
+index e34fe38..8364d01 100644
+--- a/hadoop-tools/hadoop-gridmix/pom.xml
++++ b/hadoop-tools/hadoop-gridmix/pom.xml
+@@ -24,7 +24,7 @@
+   <artifactId>hadoop-gridmix</artifactId>
+   <version>2.3.0-cdh5.0.3</version>
+   <description>Apache Hadoop Gridmix</description>
+-  <name>Apache Hadoop Gridmix</name>
++  <name>hadoop-gridmix</name>
+   <packaging>jar</packaging>
+ 
+   <properties>
+diff --git a/hadoop-tools/hadoop-openstack/pom.xml b/hadoop-tools/hadoop-openstack/pom.xml
+index 49b5148..49468de 100644
+--- a/hadoop-tools/hadoop-openstack/pom.xml
++++ b/hadoop-tools/hadoop-openstack/pom.xml
+@@ -24,7 +24,7 @@
+   </parent>
+   <artifactId>hadoop-openstack</artifactId>
+   <version>2.3.0-cdh5.0.3</version>
+-  <name>Apache Hadoop OpenStack support</name>
++  <name>hadoop-openstack</name>
+   <description>
+     This module contains code to support integration with OpenStack.
+     Currently this consists of a filesystem client to read data from
+diff --git a/hadoop-tools/hadoop-pipes/pom.xml b/hadoop-tools/hadoop-pipes/pom.xml
+index 9c90718..19e58ee 100644
+--- a/hadoop-tools/hadoop-pipes/pom.xml
++++ b/hadoop-tools/hadoop-pipes/pom.xml
+@@ -24,7 +24,7 @@
+   <artifactId>hadoop-pipes</artifactId>
+   <version>2.3.0-cdh5.0.3</version>
+   <description>Apache Hadoop Pipes</description>
+-  <name>Apache Hadoop Pipes</name>
++  <name>hadoop-pipes</name>
+   <packaging>pom</packaging>
+ 
+   <properties>
+@@ -59,7 +59,7 @@
+                     </exec>
+                     <!-- The second make is a workaround for HADOOP-9215.  It can
+                          be removed when version 2.6 of cmake is no longer supported . -->
+-                    <exec executable="make" dir="${project.build.directory}/native" failonerror="true"></exec>
++                    <!-- exec executable="make" dir="${project.build.directory}/native" failonerror="true"></exec -->
+                   </target>
+                 </configuration>
+               </execution>
+diff --git a/hadoop-tools/hadoop-rumen/pom.xml b/hadoop-tools/hadoop-rumen/pom.xml
+index 077d43f..56c0c1c 100644
+--- a/hadoop-tools/hadoop-rumen/pom.xml
++++ b/hadoop-tools/hadoop-rumen/pom.xml
+@@ -27,7 +27,7 @@
+   <artifactId>hadoop-rumen</artifactId>
+   <version>2.3.0-cdh5.0.3</version>
+   <description>Apache Hadoop Rumen</description>
+-  <name>Apache Hadoop Rumen</name>
++  <name>hadoop-rumen</name>
+   <packaging>jar</packaging>
+ 
+   <properties>
+diff --git a/hadoop-tools/hadoop-sls/pom.xml b/hadoop-tools/hadoop-sls/pom.xml
+index a4ef2d7..d3e28cd 100644
+--- a/hadoop-tools/hadoop-sls/pom.xml
++++ b/hadoop-tools/hadoop-sls/pom.xml
+@@ -26,7 +26,7 @@
+   <artifactId>hadoop-sls</artifactId>
+   <version>2.3.0-cdh5.0.3</version>
+   <description>Apache Hadoop Scheduler Load Simulator</description>
+-  <name>Apache Hadoop Scheduler Load Simulator</name>
++  <name>hadoop-sls</name>
+   <packaging>jar</packaging>
+ 
+   <dependencies>
+diff --git a/hadoop-tools/hadoop-streaming/pom.xml b/hadoop-tools/hadoop-streaming/pom.xml
+index dd389c1..0ca0910 100644
+--- a/hadoop-tools/hadoop-streaming/pom.xml
++++ b/hadoop-tools/hadoop-streaming/pom.xml
+@@ -27,7 +27,7 @@
+   <artifactId>hadoop-streaming</artifactId>
+   <version>2.3.0-cdh5.0.3</version>
+   <description>Apache Hadoop MapReduce Streaming</description>
+-  <name>Apache Hadoop MapReduce Streaming</name>
++  <name>hadoop-streaming</name>
+   <packaging>jar</packaging>
+ 
+   <properties>
+diff --git a/hadoop-tools/hadoop-tools-dist/pom.xml b/hadoop-tools/hadoop-tools-dist/pom.xml
+index a96e3ed..15cc3e2 100644
+--- a/hadoop-tools/hadoop-tools-dist/pom.xml
++++ b/hadoop-tools/hadoop-tools-dist/pom.xml
+@@ -27,7 +27,7 @@
+   <artifactId>hadoop-tools-dist</artifactId>
+   <version>2.3.0-cdh5.0.3</version>
+   <description>Apache Hadoop Tools Dist</description>
+-  <name>Apache Hadoop Tools Dist</name>
++  <name>hadoop-tools-dist</name>
+   <packaging>jar</packaging>
+ 
+   <properties>
+diff --git a/hadoop-tools/pom.xml b/hadoop-tools/pom.xml
+index ed82868..c3adbf3 100644
+--- a/hadoop-tools/pom.xml
++++ b/hadoop-tools/pom.xml
+@@ -27,7 +27,7 @@
+   <artifactId>hadoop-tools</artifactId>
+   <version>2.3.0-cdh5.0.3</version>
+   <description>Apache Hadoop Tools</description>
+-  <name>Apache Hadoop Tools</name>
++  <name>hadoop-tools</name>
+   <packaging>pom</packaging>
+ 
+   <modules>
+diff --git a/hadoop-yarn-project/hadoop-yarn/conf/yarn-site.xml b/hadoop-yarn-project/hadoop-yarn/conf/yarn-site.xml
+index 25292c7..23b2f47 100644
+--- a/hadoop-yarn-project/hadoop-yarn/conf/yarn-site.xml
++++ b/hadoop-yarn-project/hadoop-yarn/conf/yarn-site.xml
+@@ -15,5 +15,24 @@
+ <configuration>
+ 
+ <!-- Site specific YARN configuration properties -->
+-
++	<property>
++		<name>yarn.nodemanager.aux-services</name>
++		<value>mapreduce_shuffle</value>
++	</property>
++	<property>
++		<name>yarn.nodemanager.aux-services.mapreduce.shuffle.class</name>
++		<value>org.apache.hadoop.mapred.ShuffleHandler</value>
++	</property>
++	<property>
++		<name>yarn.resourcemanager.address</name>
++		<value>127.0.0.1:8032</value>
++	</property>
++	<property>
++		<name>yarn.resourcemanager.scheduler.address</name>
++		<value>127.0.0.1:8030</value>
++	</property>
++	<property>
++		<name>yarn.resourcemanager.resource-tracker.address</name>
++		<value>127.0.0.1:8031</value>
++	</property>
+ </configuration>
+diff --git a/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-nodemanager/pom.xml b/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-nodemanager/pom.xml
+index 7b71616..cfd800f 100644
+--- a/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-nodemanager/pom.xml
++++ b/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-nodemanager/pom.xml
+@@ -199,12 +199,12 @@
+                       <arg line="${basedir}/src/ -DHADOOP_CONF_DIR=${container-executor.conf.dir} -DJVM_ARCH_DATA_MODEL=${sun.arch.data.model}"/>
+                       <env key="CFLAGS" value="${container-executor.additional_cflags}"/>
+                     </exec>
+-                    <exec executable="make" dir="${project.build.directory}/native" failonerror="true">
++                    <!-- exec executable="make" dir="${project.build.directory}/native" failonerror="true">
+                       <arg line="VERBOSE=1"/>
+-                    </exec>
++                    </exec -->
+                     <!-- The second make is a workaround for HADOOP-9215.  It can
+                          be removed when version 2.6 of cmake is no longer supported . -->
+-                    <exec executable="make" dir="${project.build.directory}/native" failonerror="true"></exec>
++                    <!-- exec executable="make" dir="${project.build.directory}/native" failonerror="true"></exec -->
+                   </target>
+                 </configuration>
+               </execution>
+diff --git a/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-nodemanager/src/main/native/container-executor/impl/container-executor.c b/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-nodemanager/src/main/native/container-executor/impl/container-executor.c
+index 4fc21cb..39d81a6 100644
+--- a/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-nodemanager/src/main/native/container-executor/impl/container-executor.c
++++ b/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-nodemanager/src/main/native/container-executor/impl/container-executor.c
+@@ -31,8 +31,11 @@
+ #include <stdlib.h>
+ #include <string.h>
+ #include <limits.h>
++#include <libgen.h>
++#include <sys/param.h>
+ #include <sys/stat.h>
+ #include <sys/mount.h>
++#include <sys/resource.h>
+ 
+ static const int DEFAULT_MIN_USERID = 1000;
+ 
+@@ -366,37 +369,30 @@
+  * with the desired permissions.
+  */
+ int mkdirs(const char* path, mode_t perm) {
+-  char *buffer = strdup(path);
+-  char *token;
+-  int cwd = open("/", O_RDONLY);
+-  if (cwd == -1) {
+-    fprintf(LOGFILE, "Can't open / in %s - %s\n", path, strerror(errno));
+-    free(buffer);
+-    return -1;
+-  }
+-  for(token = strtok(buffer, "/"); token != NULL; token = strtok(NULL, "/")) {
+-    if (mkdirat(cwd, token, perm) != 0) {
+-      if (errno != EEXIST) {
+-        fprintf(LOGFILE, "Can't create directory %s in %s - %s\n", 
+-                token, path, strerror(errno));
+-        close(cwd);
+-        free(buffer);
++    struct stat sb;
++    if (stat(path, &sb) == 0) {
++        if (S_ISDIR (sb.st_mode)) {
++            return 0;
++        }else{
++            fprintf(LOGFILE, "Path %s is not an existed dir\n", path);
++            return -1;
++        }
++    }
++    else if (errno != ENOENT) {
++        fprintf(LOGFILE, "Can't access to directory %s - %s.\n", path, strerror(errno));
+         return -1;
+-      }
+     }
+-    int new_dir = openat(cwd, token, O_RDONLY);
+-    close(cwd);
+-    cwd = new_dir;
+-    if (cwd == -1) {
+-      fprintf(LOGFILE, "Can't open %s in %s - %s\n", token, path, 
+-              strerror(errno));
+-      free(buffer);
+-      return -1;
+-    }
+-  }
+-  free(buffer);
+-  close(cwd);
+-  return 0;
++
++    char npath[MAXPATHLEN];
++    memset(npath, 0x00, sizeof(npath));
++    strcpy(npath, path);
++    strcpy(npath, dirname(npath));
++
++	if(mkdirs(npath, perm) == 0 && mkdir(path, perm) == 0)
++        return 0;
++
++    fprintf(LOGFILE, "Can't create directory %s - %s.\n", path, strerror(errno));
++    return -1;
+ }
+ 
+ /**
+@@ -1236,6 +1232,10 @@
+  * hierarchy: the top directory of the hierarchy for the NM
+  */
+ int mount_cgroup(const char *pair, const char *hierarchy) {
++#if defined __FreeBSD__ || defined __APPLE__
++  fprintf(LOGFILE, "Failed to mount cgroup controller, not support\n");
++  return -1;
++#else
+   char *controller = malloc(strlen(pair));
+   char *mount_path = malloc(strlen(pair));
+   char hier_path[PATH_MAX];
+@@ -1247,7 +1247,11 @@
+               pair);
+     result = -1; 
+   } else {
++#ifdef __APPLE__
++    if (mount("cgroup", mount_path, 0, controller) == 0) {
++#else
+     if (mount("none", mount_path, "cgroup", 0, controller) == 0) {
++#endif
+       char *buf = stpncpy(hier_path, mount_path, strlen(mount_path));
+       *buf++ = '/';
+       snprintf(buf, PATH_MAX - (buf - hier_path), "%s", hierarchy);
+@@ -1272,5 +1276,6 @@
+   free(mount_path);
+ 
+   return result;
++#endif
+ }
+ 
+diff --git a/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-nodemanager/src/main/native/container-executor/test/test-container-executor.c b/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-nodemanager/src/main/native/container-executor/test/test-container-executor.c
+index e9a47b1..bb35c2d 100644
+--- a/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-nodemanager/src/main/native/container-executor/test/test-container-executor.c
++++ b/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-nodemanager/src/main/native/container-executor/test/test-container-executor.c
+@@ -222,10 +222,12 @@
+     printf("FAIL: failed check for system user root\n");
+     exit(1);
+   }
++#ifndef __APPLE__ //macosx do not have user bin
+   if (check_user("bin") == NULL) {
+     printf("FAIL: failed check for whitelisted system user bin\n");
+     exit(1);
+   }
++#endif
+ }
+ 
+ void test_resolve_config_path() {
+diff --git a/pom.xml b/pom.xml
+index 053cd57..0c466ad 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -25,7 +25,7 @@
+   <artifactId>hadoop-main</artifactId>
+   <version>2.3.0-cdh5.0.3</version>
+   <description>Apache Hadoop Main</description>
+-  <name>Apache Hadoop Main</name>
++  <name>hadoop-main</name>
+   <packaging>pom</packaging>
+ 
+   <dependencyManagement>
+diff --git a/setevn.sh b/setevn.sh
+new file mode 100755
+index 0000000..4cabc91
+--- /dev/null
++++ b/setevn.sh
+@@ -0,0 +1,7 @@
++#!/bin/bash
++sudo mkdir $JAVA_HOME/Classes
++sudo ln -s $JAVA_HOME/lib/tools.jar $JAVA_HOME/Classes/classes.jar
++
++set Platform=x64
++sudo port install ocaml
++sudo gem install cocoapods
+
