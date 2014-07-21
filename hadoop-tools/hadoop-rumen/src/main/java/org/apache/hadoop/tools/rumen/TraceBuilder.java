@@ -44,11 +44,14 @@ import org.apache.hadoop.mapreduce.jobhistory.HistoryEvent;
 import org.apache.hadoop.mapreduce.v2.hs.JobHistory;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 /**
  * The main driver of the Rumen Parser.
  */
 public class TraceBuilder extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   static final private Log LOG = LogFactory.getLog(TraceBuilder.class);
 
   static final int RUN_METHOD_FAILED_EXIT_CODE = 3;
@@ -208,6 +211,8 @@ public class TraceBuilder extends Configured implements Tool {
     traceWriter.init(options.traceOutput, getConf());
     topologyWriter = new DefaultOutputter<LoggedNetworkTopology>();
     topologyWriter.init(options.topologyOutput, getConf());
+    wld.addArg(args);
+    wld.embedConf(getConf());
 
     try {
       JobBuilder jobBuilder = null;

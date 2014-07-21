@@ -54,6 +54,7 @@ import org.apache.hadoop.security.AccessControlException;
 import org.apache.hadoop.util.ExitUtil;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 import org.apache.hadoop.yarn.logaggregation.LogCLIHelpers;
 
 import com.google.common.base.Charsets;
@@ -68,6 +69,8 @@ public class CLI extends Configured implements Tool {
   protected Cluster cluster;
   private static final Set<String> taskTypes = new HashSet<String>(
       Arrays.asList("MAP", "REDUCE"));
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   private final Set<String> taskStates = new HashSet<String>(Arrays.asList(
       "running", "completed", "pending", "failed", "killed"));
  
@@ -119,6 +122,7 @@ public class CLI extends Configured implements Tool {
         return exitCode;
       }
       submitJobFile = argv[1];
+      wld.addArg(cmd + " " + argv[1]);
     } else if ("-status".equals(cmd)) {
       if (argv.length != 2) {
         displayUsage(cmd);
@@ -126,6 +130,7 @@ public class CLI extends Configured implements Tool {
       }
       jobid = argv[1];
       getStatus = true;
+      wld.addArg(cmd + " " + argv[1]);
     } else if("-counter".equals(cmd)) {
       if (argv.length != 4) {
         displayUsage(cmd);
@@ -135,6 +140,7 @@ public class CLI extends Configured implements Tool {
       jobid = argv[1];
       counterGroupName = argv[2];
       counterName = argv[3];
+      wld.addArg(cmd + " " + argv[1] + " " + argv[2] + " " + argv[3]);
     } else if ("-kill".equals(cmd)) {
       if (argv.length != 2) {
         displayUsage(cmd);
@@ -142,6 +148,7 @@ public class CLI extends Configured implements Tool {
       }
       jobid = argv[1];
       killJob = true;
+      wld.addArg(cmd + " " + argv[1]);
     } else if ("-set-priority".equals(cmd)) {
       if (argv.length != 3) {
         displayUsage(cmd);
@@ -156,6 +163,7 @@ public class CLI extends Configured implements Tool {
         return exitCode;
       }
       setJobPriority = true; 
+      wld.addArg(cmd + " " + argv[1] + " " + argv[2]);
     } else if ("-events".equals(cmd)) {
       if (argv.length != 4) {
         displayUsage(cmd);
@@ -165,6 +173,7 @@ public class CLI extends Configured implements Tool {
       fromEvent = Integer.parseInt(argv[2]);
       nEvents = Integer.parseInt(argv[3]);
       listEvents = true;
+      wld.addArg(cmd + " " + argv[1] + " " + argv[2] + " " + argv[3]);
     } else if ("-history".equals(cmd)) {
       if (argv.length != 2 && !(argv.length == 3 && "all".equals(argv[1]))) {
          displayUsage(cmd);
@@ -174,8 +183,10 @@ public class CLI extends Configured implements Tool {
       if (argv.length == 3 && "all".equals(argv[1])) {
         viewAllHistory = true;
         historyFile = argv[2];
+        wld.addArg(cmd + " " + argv[1] + " " + argv[2]);
       } else {
         historyFile = argv[1];
+        wld.addArg(cmd + " " + argv[1]);
       }
     } else if ("-list".equals(cmd)) {
       if (argv.length != 1 && !(argv.length == 2 && "all".equals(argv[1]))) {
@@ -184,8 +195,10 @@ public class CLI extends Configured implements Tool {
       }
       if (argv.length == 2 && "all".equals(argv[1])) {
         listAllJobs = true;
+        wld.addArg(cmd + " " + argv[1]);
       } else {
         listJobs = true;
+        wld.addArg(cmd);
       }
     } else if("-kill-task".equals(cmd)) {
       if (argv.length != 2) {
@@ -194,6 +207,7 @@ public class CLI extends Configured implements Tool {
       }
       killTask = true;
       taskid = argv[1];
+      wld.addArg(cmd + " " + argv[1]);
     } else if("-fail-task".equals(cmd)) {
       if (argv.length != 2) {
         displayUsage(cmd);
@@ -201,18 +215,21 @@ public class CLI extends Configured implements Tool {
       }
       failTask = true;
       taskid = argv[1];
+      wld.addArg(cmd + " " + argv[1]);
     } else if ("-list-active-trackers".equals(cmd)) {
       if (argv.length != 1) {
         displayUsage(cmd);
         return exitCode;
       }
       listActiveTrackers = true;
+      wld.addArg(cmd + " " + argv[1]);
     } else if ("-list-blacklisted-trackers".equals(cmd)) {
       if (argv.length != 1) {
         displayUsage(cmd);
         return exitCode;
       }
       listBlacklistedTrackers = true;
+      wld.addArg(cmd);
     } else if ("-list-attempt-ids".equals(cmd)) {
       if (argv.length != 4) {
         displayUsage(cmd);
@@ -232,6 +249,7 @@ public class CLI extends Configured implements Tool {
         displayUsage(cmd);
         return exitCode;
       }
+      wld.addArg(cmd + " " + jobid + " " + taskType + " " + taskState);
     } else if ("-logs".equals(cmd)) {
       if (argv.length == 2 || argv.length ==3) {
         logs = true;
@@ -245,11 +263,13 @@ public class CLI extends Configured implements Tool {
         displayUsage(cmd);
         return exitCode;
       }
+      wld.addArg(cmd + " " + jobid + " " + taskid);
     } else {
       displayUsage(cmd);
       return exitCode;
     }
 
+    wld.embedConf(getConf());
     // initialize cluster
     cluster = createCluster();
         

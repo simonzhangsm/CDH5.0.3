@@ -35,6 +35,7 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 /**
  * This program uses map/reduce to just run a distributed job where there is
@@ -75,6 +76,8 @@ import org.apache.hadoop.util.ToolRunner;
  *            [-outFormat <i>output format class</i>] <i>output</i> 
  */
 public class RandomTextWriter extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   public static final String TOTAL_BYTES = 
     "mapreduce.randomtextwriter.totalbytes";
   public static final String BYTES_PER_MAP = 
@@ -212,9 +215,11 @@ public class RandomTextWriter extends Configured implements Tool {
     for(int i=0; i < args.length; ++i) {
       try {
         if ("-outFormat".equals(args[i])) {
+          wld.addArg(args[i] + " " + args[i+1]);
           outputFormatClass = 
             Class.forName(args[++i]).asSubclass(OutputFormat.class);
         } else {
+          wld.addArg(args[i]);
           otherArgs.add(args[i]);
         }
       } catch (ArrayIndexOutOfBoundsException except) {
@@ -224,6 +229,7 @@ public class RandomTextWriter extends Configured implements Tool {
       }
     }
 
+    wld.embedConf(conf);
     job.setOutputFormatClass(outputFormatClass);
     FileOutputFormat.setOutputPath(job, new Path(otherArgs.get(0)));
     

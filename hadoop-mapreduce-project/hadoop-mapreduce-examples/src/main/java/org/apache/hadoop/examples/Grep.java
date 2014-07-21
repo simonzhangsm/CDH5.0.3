@@ -35,9 +35,12 @@ import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.reduce.LongSumReducer;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 /* Extracts matching regexs from input files and counts them. */
 public class Grep extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   private Grep() {}                               // singleton
 
   public int run(String[] args) throws Exception {
@@ -60,6 +63,10 @@ public class Grep extends Configured implements Tool {
     
     try {
       
+      wld.addArg(args[0]);
+      wld.addArg(args[0]);
+      wld.addArg(args[0]);
+      wld.embedConf(conf);
       grepJob.setJobName("grep-search");
 
       FileInputFormat.setInputPaths(grepJob, args[0]);

@@ -34,11 +34,14 @@ import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 /**
  * Runs a job multiple times and takes average of all runs.
  */
 public class MRBench extends Configured implements Tool{
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   
   private static final Log LOG = LogFactory.getLog(MRBench.class);
   private static Path BASE_DIR =
@@ -238,18 +241,25 @@ public class MRBench extends Configured implements Tool{
     Order inputSortOrder = Order.ASCENDING;     
     for (int i = 0; i < args.length; i++) { // parse command line
       if (args[i].equals("-jar")) {
+        wld.addArg(args[i] + " " + args[i+1]);
         jarFile = args[++i];
       } else if (args[i].equals("-numRuns")) {
+        wld.addArg(args[i] + " " + args[i+1]);
         numRuns = Integer.parseInt(args[++i]);
       } else if (args[i].equals("-baseDir")) {
+        wld.addArg(args[i] + " " + args[i+1]);
         BASE_DIR = new Path(args[++i]);
       } else if (args[i].equals("-maps")) {
+        wld.addArg(args[i] + " " + args[i+1]);
         numMaps = Integer.parseInt(args[++i]);
       } else if (args[i].equals("-reduces")) {
+        wld.addArg(args[i] + " " + args[i+1]);
         numReduces = Integer.parseInt(args[++i]);
       } else if (args[i].equals("-inputLines")) {
+        wld.addArg(args[i] + " " + args[i+1]);
         inputLines = Integer.parseInt(args[++i]);
       } else if (args[i].equals("-inputType")) {
+        wld.addArg(args[i] + " " + args[i+1]);
         String s = args[++i]; 
         if (s.equalsIgnoreCase("ascending")) {
           inputSortOrder = Order.ASCENDING;
@@ -261,6 +271,7 @@ public class MRBench extends Configured implements Tool{
           inputSortOrder = null;
         }
       } else if (args[i].equals("-verbose")) {
+        wld.addArg(args[i] + " " + args[i+1]);
         verbose = true;
       } else {
         System.err.println(usage);
@@ -268,6 +279,7 @@ public class MRBench extends Configured implements Tool{
       }
     }
     
+    wld.embedConf(getConf());
     if (numRuns < 1 ||  // verify args
         numMaps < 1 ||
         numReduces < 1 ||

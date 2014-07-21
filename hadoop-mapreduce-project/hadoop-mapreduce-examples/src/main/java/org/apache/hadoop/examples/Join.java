@@ -43,6 +43,7 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 /**
  * Given a set of sorted datasets keyed with the same class and yielding
@@ -59,6 +60,8 @@ import org.apache.hadoop.util.ToolRunner;
  *            [<i>in-dir</i>]* <i>in-dir</i> <i>out-dir</i> 
  */
 public class Join extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   public static final String REDUCES_PER_HOST = "mapreduce.join.reduces_per_host";
   static int printUsage() {
     System.out.println("join [-r <reduces>] " +
@@ -107,22 +110,29 @@ public class Join extends Configured implements Tool {
     for(int i=0; i < args.length; ++i) {
       try {
         if ("-r".equals(args[i])) {
+          wld.addArg(args[i] + " " + args[i+1]);
           num_reduces = Integer.parseInt(args[++i]);
         } else if ("-inFormat".equals(args[i])) {
+          wld.addArg(args[i] + " " + args[i+1]);
           inputFormatClass = 
             Class.forName(args[++i]).asSubclass(InputFormat.class);
         } else if ("-outFormat".equals(args[i])) {
+          wld.addArg(args[i] + " " + args[i+1]);
           outputFormatClass = 
             Class.forName(args[++i]).asSubclass(OutputFormat.class);
         } else if ("-outKey".equals(args[i])) {
+          wld.addArg(args[i] + " " + args[i+1]);
           outputKeyClass = 
             Class.forName(args[++i]).asSubclass(WritableComparable.class);
         } else if ("-outValue".equals(args[i])) {
+          wld.addArg(args[i] + " " + args[i+1]);
           outputValueClass = 
             Class.forName(args[++i]).asSubclass(Writable.class);
         } else if ("-joinOp".equals(args[i])) {
+          wld.addArg(args[i] + " " + args[i+1]);
           op = args[++i];
         } else {
+          wld.addArg(args[i] + " " + args[i+1]);
           otherArgs.add(args[i]);
         }
       } catch (NumberFormatException except) {
@@ -135,6 +145,7 @@ public class Join extends Configured implements Tool {
       }
     }
 
+    wld.embedConf(getConf());
     // Set user-supplied (possibly default) job configs
     job.setNumReduceTasks(num_reduces);
 

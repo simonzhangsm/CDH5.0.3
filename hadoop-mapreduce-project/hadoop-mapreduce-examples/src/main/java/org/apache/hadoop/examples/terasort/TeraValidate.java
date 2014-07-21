@@ -36,6 +36,7 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.PureJavaCrc32;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 /**
  * Generate 1 mapper per a file that checks to make sure the keys
@@ -51,6 +52,8 @@ import org.apache.hadoop.util.ToolRunner;
  * will have the problem report.
  */
 public class TeraValidate extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   private static final Text ERROR = new Text("error");
   private static final Text CHECKSUM = new Text("checksum");
   
@@ -162,6 +165,8 @@ public class TeraValidate extends Configured implements Tool {
       usage();
       return 1;
     }
+    wld.addArg(args[0] + " " + args[1]);
+    wld.embedConf(getConf());
     TeraInputFormat.setInputPaths(job, new Path(args[0]));
     FileOutputFormat.setOutputPath(job, new Path(args[1]));
     job.setJobName("TeraValidate");

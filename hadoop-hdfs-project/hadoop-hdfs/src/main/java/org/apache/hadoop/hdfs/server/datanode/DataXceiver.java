@@ -82,6 +82,7 @@ import org.apache.hadoop.net.unix.DomainSocket;
 import org.apache.hadoop.security.token.SecretManager.InvalidToken;
 import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.util.DataChecksum;
+import org.apache.hadoop.workload.Workload;
 
 import com.google.protobuf.ByteString;
 
@@ -103,6 +104,7 @@ class DataXceiver extends Receiver implements Runnable {
   private long opStartTime; //the start time of receiving an Op
   private final InputStream socketIn;
   private OutputStream socketOut;
+  private Workload wld;
 
   /**
    * Client Name used in previous operation. Not available on first request

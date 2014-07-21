@@ -33,6 +33,7 @@ import org.apache.hadoop.mapreduce.lib.output.NullOutputFormat;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 /**
  * Dummy class for testing MR framefork. Sleeps for a defined period 
@@ -42,6 +43,8 @@ import org.apache.hadoop.util.ToolRunner;
  * some disk space.
  */
 public class SleepJob extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   public static String MAP_SLEEP_COUNT = "mapreduce.sleepjob.map.sleep.count";
   public static String REDUCE_SLEEP_COUNT = 
     "mapreduce.sleepjob.reduce.sleep.count";
@@ -238,22 +241,28 @@ public class SleepJob extends Configured implements Tool {
 
     for(int i=0; i < args.length; i++ ) {
       if(args[i].equals("-m")) {
+        wld.addArg(args[i] + " " + args[i+1]);
         numMapper = Integer.parseInt(args[++i]);
       }
       else if(args[i].equals("-r")) {
+        wld.addArg(args[i] + " " + args[i+1]);
         numReducer = Integer.parseInt(args[++i]);
       }
       else if(args[i].equals("-mt")) {
+        wld.addArg(args[i] + " " + args[i+1]);
         mapSleepTime = Long.parseLong(args[++i]);
       }
       else if(args[i].equals("-rt")) {
+        wld.addArg(args[i] + " " + args[i+1]);
         reduceSleepTime = Long.parseLong(args[++i]);
       }
       else if (args[i].equals("-recordt")) {
+        wld.addArg(args[i] + " " + args[i+1]);
         recSleepTime = Long.parseLong(args[++i]);
       }
     }
     
+    wld.embedConf(getConf());
     // sleep for *SleepTime duration in Task by recSleepTime per record
     mapSleepCount = (int)Math.ceil(mapSleepTime / ((double)recSleepTime));
     reduceSleepCount = (int)Math.ceil(reduceSleepTime / ((double)recSleepTime));

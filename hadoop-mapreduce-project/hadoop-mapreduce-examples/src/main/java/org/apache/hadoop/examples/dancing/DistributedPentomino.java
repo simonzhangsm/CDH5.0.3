@@ -32,6 +32,7 @@ import org.apache.hadoop.mapreduce.*;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.*;
+import org.apache.hadoop.workload.Workload;
 
 import com.google.common.base.Charsets;
 
@@ -45,6 +46,8 @@ import com.google.common.base.Charsets;
  * map/reduce. The output key/value are the move prefix/solution as Text/Text.
  */
 public class DistributedPentomino extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
 
   private static final int PENT_DEPTH = 5;
   private static final int PENT_WIDTH = 9;
@@ -179,10 +182,13 @@ public class DistributedPentomino extends Configured implements Tool {
     int depth = conf.getInt(Pentomino.DEPTH, PENT_DEPTH);
     for (int i = 0; i < args.length; i++) {
       if (args[i].equalsIgnoreCase("-depth")) {
+        wld.addArg(args[i] + " " + args[i+1]);
         depth = Integer.parseInt(args[++i].trim());
       } else if (args[i].equalsIgnoreCase("-height")) {
+        wld.addArg(args[i] + " " + args[i+1]);
         height = Integer.parseInt(args[++i].trim());
       } else if (args[i].equalsIgnoreCase("-width") ) {
+        wld.addArg(args[i] + " " + args[i+1]);
         width = Integer.parseInt(args[++i].trim());
       }
     }
@@ -196,6 +202,9 @@ public class DistributedPentomino extends Configured implements Tool {
     int numMaps = conf.getInt(MRJobConfig.NUM_MAPS, DEFAULT_MAPS);
     Path output = new Path(args[0]);
     Path input = new Path(output + "_input");
+    wld.addArg(output.getName());
+    wld.addArg(input.getName());
+    wld.embedConf(conf);
     FileSystem fileSys = FileSystem.get(conf);
     try {
       Job job = new Job(conf);

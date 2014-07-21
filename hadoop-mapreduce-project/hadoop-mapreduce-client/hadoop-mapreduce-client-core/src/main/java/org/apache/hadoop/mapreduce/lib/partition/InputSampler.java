@@ -47,6 +47,7 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 /**
  * Utility for collecting samples and writing a partition file for
@@ -55,6 +56,8 @@ import org.apache.hadoop.util.ToolRunner;
 @InterfaceAudience.Public
 @InterfaceStability.Stable
 public class InputSampler<K,V> extends Configured implements Tool  {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
 
   private static final Log LOG = LogFactory.getLog(InputSampler.class);
 
@@ -354,30 +357,37 @@ public class InputSampler<K,V> extends Configured implements Tool  {
     for(int i=0; i < args.length; ++i) {
       try {
         if ("-r".equals(args[i])) {
+          wld.addArg(args[i]);
           job.setNumReduceTasks(Integer.parseInt(args[++i]));
         } else if ("-inFormat".equals(args[i])) {
+          wld.addArg(args[i] + " " + args[i+1]);
           job.setInputFormatClass(
               Class.forName(args[++i]).asSubclass(InputFormat.class));
         } else if ("-keyClass".equals(args[i])) {
+          wld.addArg(args[i] + " " + args[i+1]);
           job.setMapOutputKeyClass(
               Class.forName(args[++i]).asSubclass(WritableComparable.class));
         } else if ("-splitSample".equals(args[i])) {
+          wld.addArg(args[i] + " " + args[i+1] + " " +args[i+2]); 
           int numSamples = Integer.parseInt(args[++i]);
           int maxSplits = Integer.parseInt(args[++i]);
           if (0 >= maxSplits) maxSplits = Integer.MAX_VALUE;
           sampler = new SplitSampler<K,V>(numSamples, maxSplits);
         } else if ("-splitRandom".equals(args[i])) {
+          wld.addArg(args[i] + " " + args[i+1] + " " +args[i+2] + " " + args[i+3]);
           double pcnt = Double.parseDouble(args[++i]);
           int numSamples = Integer.parseInt(args[++i]);
           int maxSplits = Integer.parseInt(args[++i]);
           if (0 >= maxSplits) maxSplits = Integer.MAX_VALUE;
           sampler = new RandomSampler<K,V>(pcnt, numSamples, maxSplits);
         } else if ("-splitInterval".equals(args[i])) {
+          wld.addArg(args[i] + " " + args[i+1] + " " +args[i+2]);
           double pcnt = Double.parseDouble(args[++i]);
           int maxSplits = Integer.parseInt(args[++i]);
           if (0 >= maxSplits) maxSplits = Integer.MAX_VALUE;
           sampler = new IntervalSampler<K,V>(pcnt, maxSplits);
         } else {
+          wld.addArg(args[i]); 
           otherArgs.add(args[i]);
         }
       } catch (NumberFormatException except) {
@@ -389,6 +399,7 @@ public class InputSampler<K,V> extends Configured implements Tool  {
         return printUsage();
       }
     }
+    wld.embedConf(getConf()); 
     if (job.getNumReduceTasks() <= 1) {
       System.err.println("Sampler requires more than one reducer");
       return printUsage();

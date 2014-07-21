@@ -23,6 +23,7 @@ import java.io.PrintStream;
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.classification.InterfaceStability;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.workload.Workload;
 
 /**
  * A utility to help run {@link Tool}s.
@@ -63,6 +64,11 @@ public class ToolRunner {
     }
     GenericOptionsParser parser = new GenericOptionsParser(conf, args);
     //set the configuration back, so that Tool can configure itself
+    if(Workload.getWorkload(conf)==null){
+      Workload wld = new Workload(tool.getClass().getSimpleName());
+      wld.addArg(parser.getCommandLine());
+      wld.embedConf(conf);
+    }
     tool.setConf(conf);
     
     //get the args w/o generic hadoop args

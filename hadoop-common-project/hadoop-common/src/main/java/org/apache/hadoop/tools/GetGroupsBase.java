@@ -27,6 +27,7 @@ import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.Tool;
+import org.apache.hadoop.workload.Workload;
 
 /**
  * Base class for the HDFS and MR implementations of tools which fetch and
@@ -34,6 +35,8 @@ import org.apache.hadoop.util.Tool;
  */
 public abstract class GetGroupsBase extends Configured implements Tool {
   
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   private PrintStream out;
   
   /**
@@ -72,8 +75,10 @@ public abstract class GetGroupsBase extends Configured implements Tool {
         sb.append(" ");
         sb.append(group);
       }
+      wld.addArg(sb.toString());
       out.println(sb);
     }
+    wld.embedConf(getConf());
 
     return 0;
   }

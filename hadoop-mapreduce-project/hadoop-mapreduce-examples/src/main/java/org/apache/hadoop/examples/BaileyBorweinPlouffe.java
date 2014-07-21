@@ -51,6 +51,7 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 import com.google.common.base.Charsets;
 
@@ -70,6 +71,8 @@ import com.google.common.base.Charsets;
  *     Math. Comp., 66:903-913, 1996.
  */
 public class BaileyBorweinPlouffe extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   public static final String DESCRIPTION
       = "A map/reduce program that uses Bailey-Borwein-Plouffe to compute exact digits of Pi.";
 
@@ -407,9 +410,13 @@ public class BaileyBorweinPlouffe extends Configured implements Tool {
     }
 
     final int startDigit = Integer.parseInt(args[0]);
+    wld.addArg(args[0]);
     final int nDigits = Integer.parseInt(args[1]);
+    wld.addArg(args[1]);
     final int nMaps = Integer.parseInt(args[2]);
+    wld.addArg(args[2]);
     final String workingDir = args[3];
+    wld.addArg(args[3]);
 
     if (startDigit <= 0) {
       throw new IllegalArgumentException("startDigit = " + startDigit+" <= 0");
@@ -428,6 +435,7 @@ public class BaileyBorweinPlouffe extends Configured implements Tool {
       throw new IllegalArgumentException("nMaps = " + nMaps + " <= 0");
     }
 
+    wld.embedConf(getConf());
     compute(startDigit, nDigits, nMaps, workingDir, getConf(), System.out);
     return 0;
   }

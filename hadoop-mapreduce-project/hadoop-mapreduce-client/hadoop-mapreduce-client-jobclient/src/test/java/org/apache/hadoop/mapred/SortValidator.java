@@ -35,6 +35,7 @@ import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.mapred.lib.HashPartitioner;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 import org.apache.hadoop.fs.*;
 
 /**
@@ -52,6 +53,8 @@ import org.apache.hadoop.fs.*;
  *            -sortInput <i>sort-in-dir</i> -sortOutput <i>sort-out-dir</i> 
  */
 public class SortValidator extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
 
   static private final IntWritable sortInput = new IntWritable(1); 
   static private final IntWritable sortOutput = new IntWritable(2); 
@@ -544,14 +547,19 @@ public class SortValidator extends Configured implements Tool {
     for(int i=0; i < args.length; ++i) {
       try {
         if ("-m".equals(args[i])) {
+          wld.addArg(args[i] + " " + args[i+1]);
           noMaps = Integer.parseInt(args[++i]);
         } else if ("-r".equals(args[i])) {
+          wld.addArg(args[i] + " " + args[i+1]);
           noReduces = Integer.parseInt(args[++i]);
         } else if ("-sortInput".equals(args[i])){
+          wld.addArg(args[i] + " " + args[i+1]);
           sortInput = new Path(args[++i]);
         } else if ("-sortOutput".equals(args[i])){
+          wld.addArg(args[i] + " " + args[i+1]);
           sortOutput = new Path(args[++i]);
         } else if ("-deep".equals(args[i])) {
+          wld.addArg(args[i]);
           deepTest = true;
         } else {
           printUsage();
@@ -569,6 +577,7 @@ public class SortValidator extends Configured implements Tool {
       }
     }
     
+    wld.embedConf(getConf());
     // Sanity check
     if (sortInput == null || sortOutput == null) {
       printUsage();

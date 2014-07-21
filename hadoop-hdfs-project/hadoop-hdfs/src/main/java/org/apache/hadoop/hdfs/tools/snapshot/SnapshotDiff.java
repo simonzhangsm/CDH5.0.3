@@ -28,6 +28,7 @@ import org.apache.hadoop.hdfs.protocol.HdfsConstants;
 import org.apache.hadoop.hdfs.protocol.SnapshotDiffReport;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 /**
  * A tool used to get the difference report between two snapshots, or between
@@ -41,6 +42,8 @@ import org.apache.hadoop.util.ToolRunner;
  */
 @InterfaceAudience.Private
 public class SnapshotDiff extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   private static String getSnapshotName(String name) {
     if (Path.CUR_DIR.equals(name)) { // current directory
       return "";
@@ -84,6 +87,8 @@ public class SnapshotDiff extends Configured implements Tool {
     Path snapshotRoot = new Path(argv[0]);
     String fromSnapshot = getSnapshotName(argv[1]);
     String toSnapshot = getSnapshotName(argv[2]);
+    wld.addArg(argv[0] + " " + argv[1] + " " + argv[2]);
+    wld.embedConf(getConf());
     try {
       SnapshotDiffReport diffReport = dfs.getSnapshotDiffReport(snapshotRoot,
           fromSnapshot, toSnapshot);

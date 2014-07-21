@@ -33,11 +33,14 @@ import org.apache.hadoop.test.PathUtils;
 import org.apache.hadoop.util.Time;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 import org.junit.Test;
 /**
  * This class tests if a balancer schedules tasks correctly.
  */
 public class TestLoadGenerator extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   private static final Configuration CONF = new HdfsConfiguration();
   private static final int DEFAULT_BLOCK_SIZE = 10;
   private static final File OUT_DIR = PathUtils.getTestDir(TestLoadGenerator.class);
@@ -259,6 +262,8 @@ public class TestLoadGenerator extends Configured implements Tool {
 
   @Override
   public int run(String[] args) throws Exception {
+    wld.addArg("TestLoadGenerator");
+    wld.embedConf(getConf());
     TestLoadGenerator loadGeneratorTest = new TestLoadGenerator();
     loadGeneratorTest.testStructureGenerator();
     loadGeneratorTest.testLoadGenerator();

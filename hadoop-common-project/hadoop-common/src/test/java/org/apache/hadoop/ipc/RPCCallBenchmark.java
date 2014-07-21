@@ -46,6 +46,7 @@ import org.apache.hadoop.test.MultithreadedTestUtil;
 import org.apache.hadoop.test.MultithreadedTestUtil.TestContext;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 import com.google.common.base.Joiner;
 import com.google.protobuf.BlockingService;
@@ -55,6 +56,8 @@ import com.google.protobuf.BlockingService;
  * Run with --help option for usage.
  */
 public class RPCCallBenchmark implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName()); 
   private Configuration conf;
   private AtomicLong callCount = new AtomicLong(0);
   private static ThreadMXBean threadBean =
@@ -271,6 +274,8 @@ public class RPCCallBenchmark implements Tool {
     RPC.setProtocolEngine(conf, TestRpcService.class, opts.rpcEngine);
 
     Server server = startServer(opts);
+    wld.addArg(opts.toString());
+    wld.embedConf(getConf());
     try {
       
       TestContext ctx = setupClientTestContext(opts);

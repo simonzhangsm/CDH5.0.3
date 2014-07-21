@@ -32,6 +32,7 @@ import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 import org.jets3t.service.S3Service;
 import org.jets3t.service.S3ServiceException;
 import org.jets3t.service.ServiceException;
@@ -54,6 +55,8 @@ import org.jets3t.service.security.AWSCredentials;
 @InterfaceStability.Unstable
 public class MigrationTool extends Configured implements Tool {
   
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   private S3Service s3Service;
   private S3Bucket bucket;
   
@@ -74,6 +77,8 @@ public class MigrationTool extends Configured implements Tool {
     
     URI uri = URI.create(args[0]);
     
+    wld.addArg(args[0]);
+    wld.embedConf(getConf());
     initialize(uri);
     
     FileSystemStore newStore = new Jets3tFileSystemStore();

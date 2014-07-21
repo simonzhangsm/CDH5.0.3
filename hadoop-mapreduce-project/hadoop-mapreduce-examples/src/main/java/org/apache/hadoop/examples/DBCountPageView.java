@@ -49,6 +49,7 @@ import org.apache.hadoop.mapreduce.lib.reduce.LongSumReducer;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 import org.hsqldb.server.Server;
 
 /**
@@ -77,6 +78,8 @@ import org.hsqldb.server.Server;
  * <code>-libjars share/hadoop/mapreduce/lib-examples/hsqldb-2.0.0.jar</code>
  */
 public class DBCountPageView extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
 
   private static final Log LOG = LogFactory.getLog(DBCountPageView.class);
   
@@ -389,11 +392,13 @@ public class DBCountPageView extends Configured implements Tool {
     if(args.length > 1) {
       driverClassName = args[0];
       url = args[1];
+      wld.addArg(driverClassName + " " + url);
     }
     
     initialize(driverClassName, url);
     Configuration conf = getConf();
 
+    wld.embedConf(conf);
     DBConfiguration.configureDB(conf, driverClassName, url);
 
     Job job = new Job(conf);

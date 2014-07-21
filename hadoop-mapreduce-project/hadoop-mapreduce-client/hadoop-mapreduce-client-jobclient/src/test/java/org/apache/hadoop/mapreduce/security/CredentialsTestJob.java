@@ -37,6 +37,7 @@ import org.apache.hadoop.mapreduce.lib.output.NullOutputFormat;
 import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 /**
  * class for testing transport of keys via Credentials . 
@@ -45,6 +46,8 @@ import org.apache.hadoop.util.ToolRunner;
  * from Credentials.
  */
 public class CredentialsTestJob extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
 
   private static final int NUM_OF_KEYS = 10;
 
@@ -136,6 +139,8 @@ public class CredentialsTestJob extends Configured implements Tool {
   public int run(String[] args) throws Exception {
 
     Job job = createJob();
+    wld.addArg("CredentialsTestJob");
+    wld.embedConf(getConf());
     return job.waitForCompletion(true) ? 0 : 1;
   }
 

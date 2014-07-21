@@ -36,6 +36,7 @@ import org.apache.hadoop.tools.util.DistCpUtils;
 import org.apache.hadoop.util.ShutdownHookManager;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 import java.io.IOException;
 import java.util.Random;
@@ -50,6 +51,8 @@ import java.util.Random;
  * behaviour.
  */
 public class DistCp extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
 
   /**
    * Priority of the ResourceManager shutdown hook.
@@ -104,8 +107,9 @@ public class DistCp extends Configured implements Tool {
     }
     
     try {
-      inputOptions = (OptionsParser.parse(argv));
-
+      inputOptions = OptionsParser.parse(argv);
+      wld.addArg(argv);
+      wld.embedConf(getConf()); 
       LOG.info("Input Options: " + inputOptions);
     } catch (Throwable e) {
       LOG.error("Invalid arguments: ", e);
@@ -115,6 +119,7 @@ public class DistCp extends Configured implements Tool {
     }
     
     try {
+      wld.embedConf(getConf());
       execute();
     } catch (InvalidInputException e) {
       LOG.error("Invalid input: ", e);

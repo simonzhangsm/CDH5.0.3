@@ -36,6 +36,7 @@ import org.apache.hadoop.mapred.lib.IdentityMapper;
 import org.apache.hadoop.mapred.lib.IdentityReducer;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 /**
  * Distributed threaded map benchmark.
@@ -52,6 +53,8 @@ import org.apache.hadoop.util.ToolRunner;
 
 public class ThreadedMapBenchmark extends Configured implements Tool {
 
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   private static final Log LOG = LogFactory.getLog(ThreadedMapBenchmark.class);
   private static Path BASE_DIR =
     new Path(System.getProperty("test.build.data", 
@@ -199,10 +202,13 @@ public class ThreadedMapBenchmark extends Configured implements Tool {
     
     for (int i = 0; i < args.length; i++) { // parse command line
       if (args[i].equals("-dataSizePerMap")) {
+        wld.addArg(args[i] + " " + args[i+1]);
         dataSizePerMap = Integer.parseInt(args[++i]);
       } else if (args[i].equals("-numSpillsPerMap")) {
+        wld.addArg(args[i] + " " + args[i+1]);
         numSpillsPerMap = Integer.parseInt(args[++i]);
       } else if (args[i].equals("-numMapsPerHost")) {
+        wld.addArg(args[i] + " " + args[i+1]);
         numMapsPerHost = Integer.parseInt(args[++i]);
       } else {
         System.err.println(usage);
@@ -210,6 +216,7 @@ public class ThreadedMapBenchmark extends Configured implements Tool {
       }
     }
     
+    wld.embedConf(getConf());
     if (dataSizePerMap <  1 ||  // verify arguments
         numSpillsPerMap < 1 ||
         numMapsPerHost < 1)

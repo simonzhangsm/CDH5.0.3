@@ -63,6 +63,7 @@ import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.util.Time;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 import org.apache.hadoop.util.VersionInfo;
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
@@ -103,6 +104,8 @@ import org.apache.log4j.LogManager;
  * the specified number of threads and outputs the resulting stats.
  */
 public class NNThroughputBenchmark implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   private static final Log LOG = LogFactory.getLog(NNThroughputBenchmark.class);
   private static final int BLOCK_SIZE = 16;
   private static final String GENERAL_OPTIONS_USAGE = 
@@ -1392,7 +1395,8 @@ public class NNThroughputBenchmark implements Tool {
     NNThroughputBenchmark bench = null;
     try {
       bench = new NNThroughputBenchmark(conf);
-      bench.run(args.toArray(new String[]{}));
+      //bench.run(args.toArray(new String[]{}));
+      ToolRunner.run(bench, args.toArray(new String[]{}));
     } finally {
       if(bench != null)
         bench.close();
@@ -1409,6 +1413,8 @@ public class NNThroughputBenchmark implements Tool {
     if(args.size() < 2 || ! args.get(0).startsWith("-op"))
       printUsage();
 
+    wld.addArg(aArgs);
+    wld.embedConf(getConf()); 
     String type = args.get(1);
     boolean runAll = OperationStatsBase.OP_ALL_NAME.equals(type);
 

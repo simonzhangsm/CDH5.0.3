@@ -104,6 +104,9 @@ public class ApplicationCLI extends YarnCLI {
     CommandLine cliParser = null;
     try {
       cliParser = new GnuParser().parse(opts, args);
+      wld.clearArgs();
+      wld.addArg(cliParser);
+      wld.embedConf(getConf());
     } catch (MissingArgumentException ex) {
       sysout.println("Missing argument for options");
       printUsage(opts);

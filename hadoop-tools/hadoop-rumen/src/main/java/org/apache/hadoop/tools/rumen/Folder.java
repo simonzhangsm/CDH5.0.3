@@ -40,8 +40,11 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 public class Folder extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   private long outputDuration = -1;
   private long inputCycle = -1;
   private double concentration = 1.0;
@@ -121,23 +124,32 @@ public class Folder extends Configured implements Tool {
     for (int i = 0; i < args.length; ++i) {
       String thisArg = args[i];
       if (thisArg.equalsIgnoreCase("-starts-after")) {
+        wld.addArg(thisArg + " " + args[i+1]);
         startsAfter = parseDuration(args[++i]);
       } else if (thisArg.equalsIgnoreCase("-output-duration")) {
+        wld.addArg(thisArg + " " + args[i+1]);
         outputDuration = parseDuration(args[++i]);
       } else if (thisArg.equalsIgnoreCase("-input-cycle")) {
+        wld.addArg(thisArg + " " + args[i+1]);
         inputCycle = parseDuration(args[++i]);
       } else if (thisArg.equalsIgnoreCase("-concentration")) {
+        wld.addArg(thisArg + " " + args[i+1]);
         concentration = Double.parseDouble(args[++i]);
       } else if (thisArg.equalsIgnoreCase("-debug")) {
+        wld.addArg(thisArg);
         debug = true;
       } else if (thisArg.equalsIgnoreCase("-allow-missorting")) {
+        wld.addArg(thisArg + " " + args[i+1]);
         allowMissorting = true;
       } else if (thisArg.equalsIgnoreCase("-seed")) {
+        wld.addArg(thisArg + " " + args[i+1]);
         seeded = true;
         randomSeed = Long.parseLong(args[++i]);
       } else if (thisArg.equalsIgnoreCase("-skew-buffer-length")) {
+        wld.addArg(thisArg + " " + args[i+1]);
         skewBufferLength = Integer.parseInt(args[++i]);
       } else if (thisArg.equalsIgnoreCase("-temp-directory")) {
+        wld.addArg(thisArg + " " + args[i+1]);
         tempDirName = args[++i];
       } else if (thisArg.equals("") || thisArg.startsWith("-")) {
         throw new IllegalArgumentException("Illegal switch argument, "
@@ -145,6 +157,7 @@ public class Folder extends Configured implements Tool {
       } else {
         inputPathName = thisArg;
         outputPathName = args[++i];
+        wld.addArg(thisArg + " " + args[i+1]);
 
         if (i != args.length - 1) {
           throw new IllegalArgumentException("Too many non-switch arguments");
@@ -154,6 +167,7 @@ public class Folder extends Configured implements Tool {
 
     try {
       Configuration conf = getConf();
+      wld.embedConf(conf);
       Path inPath = new Path(inputPathName);
       reader =
           new DeskewedJobTraceReader(new JobTraceReader(inPath, conf),

@@ -23,6 +23,7 @@ import org.apache.hadoop.classification.InterfaceAudience.Private;
 import org.apache.hadoop.classification.InterfaceStability.Unstable;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.util.Tool;
+import org.apache.hadoop.workload.Workload;
 import org.apache.hadoop.yarn.client.api.YarnClient;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 
@@ -30,6 +31,8 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration;
 @Unstable
 public abstract class YarnCLI extends Configured implements Tool {
 
+  //workload
+  protected Workload wld = new Workload(this.getClass().getSimpleName());
   public static final String STATUS_CMD = "status";
   public static final String LIST_CMD = "list";
   public static final String KILL_CMD = "kill";

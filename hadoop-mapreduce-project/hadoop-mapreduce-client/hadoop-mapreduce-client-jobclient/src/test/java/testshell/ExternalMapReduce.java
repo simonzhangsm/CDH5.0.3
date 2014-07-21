@@ -38,12 +38,15 @@ import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 /**
  * will be in an external jar and used for 
  * test in TestJobShell.java.
  */
 public class ExternalMapReduce extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
 
   public void configure(JobConf job) {
     // do nothing
@@ -112,8 +115,10 @@ public class ExternalMapReduce extends Configured implements Tool {
     }
     Path outDir = new Path(argv[1]);
     Path input = new Path(argv[0]);
+    wld.addArg(argv[0] + " " + argv[1]);
     JobConf testConf = new JobConf(getConf(), ExternalMapReduce.class);
     
+    wld.embedConf(testConf);
     //try to load a class from libjar
     try {
       testConf.getClassByName("testjar.ClassWordCount");

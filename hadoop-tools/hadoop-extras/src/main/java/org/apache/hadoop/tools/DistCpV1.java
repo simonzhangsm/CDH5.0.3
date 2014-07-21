@@ -72,12 +72,15 @@ import org.apache.hadoop.security.AccessControlException;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 /**
  * A Map-reduce program to recursively copy directories between
  * different file-systems.
  */
 public class DistCpV1 implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   public static final Log LOG = LogFactory.getLog(DistCpV1.class);
 
   private static final String NAME = "distcp";
@@ -899,7 +902,7 @@ public class DistCpV1 implements Tool {
       }
     }
 
-    static Arguments valueOf(String[] args, Configuration conf
+    static Arguments valueOf(String[] args, Configuration conf, Workload wld
         ) throws IOException {
       List<Path> srcs = new ArrayList<Path>();
       Path dst = null;
@@ -921,43 +924,52 @@ public class DistCpV1 implements Tool {
           flags.add(opt[i]);
           if (opt[i] == Options.PRESERVE_STATUS) {
             presevedAttributes =  args[idx].substring(2);         
+            wld.addArg(opt[i] + " " + presevedAttributes);
             FileAttribute.parse(presevedAttributes); //validation
           }
           else if (opt[i] == Options.FILE_LIMIT) {
             filelimit = Options.FILE_LIMIT.parseLong(args, ++idx);
+            wld.addArg(opt[i] + " " + filelimit);
           }
           else if (opt[i] == Options.SIZE_LIMIT) {
             sizelimit = Options.SIZE_LIMIT.parseLong(args, ++idx);
+            wld.addArg(opt[i] + " " + sizelimit);
           }
         } else if ("-f".equals(args[idx])) {
           if (++idx ==  args.length) {
             throw new IllegalArgumentException("urilist_uri not specified in -f");
           }
+          wld.addArg("-f " + args[idx]);
           srcs.addAll(fetchFileList(conf, new Path(args[idx])));
         } else if ("-log".equals(args[idx])) {
           if (++idx ==  args.length) {
             throw new IllegalArgumentException("logdir not specified in -log");
           }
           log = new Path(args[idx]);
+          wld.addArg("-log " + args[idx]);
         } else if ("-basedir".equals(args[idx])) {
           if (++idx ==  args.length) {
             throw new IllegalArgumentException("basedir not specified in -basedir");
           }
           basedir = new Path(args[idx]);
+          wld.addArg("-basedir " + args[idx]);
         } else if ("-mapredSslConf".equals(args[idx])) {
           if (++idx ==  args.length) {
             throw new IllegalArgumentException("ssl conf file not specified in -mapredSslConf");
           }
           mapredSslConf = args[idx];
+          wld.addArg("-mapredSslConf " + args[idx]);
         } else if ("-dryrun".equals(args[idx])) {
           dryrun = true;
           dst = new Path("/tmp/distcp_dummy_dest");//dummy destination
+          wld.addArg("-dryrun " + args[idx]);
         } else if ("-m".equals(args[idx])) {
           if (++idx == args.length) {
             throw new IllegalArgumentException("num_maps not specified in -m");
           }
           try {
             conf.setInt(MAX_MAPS_LABEL, Integer.valueOf(args[idx]));
+            wld.addArg("-m " + args[idx]);
           } catch (NumberFormatException e) {
             throw new IllegalArgumentException("Invalid argument to -m: " +
                                                args[idx]);
@@ -967,10 +979,13 @@ public class DistCpV1 implements Tool {
         } else if (idx == args.length -1 &&
                    (!dryrun || flags.contains(Options.UPDATE))) {
           dst = new Path(args[idx]);
+          wld.addArg(args[idx]);
         } else {
           srcs.add(new Path(args[idx]));
+          wld.addArg("-dryrun " + args[idx]);
         }
       }
+      wld.embedConf(conf);
       // mandatory command-line parameters
       if (srcs.isEmpty() || dst == null) {
         throw new IllegalArgumentException("Missing "
@@ -1023,7 +1038,7 @@ public class DistCpV1 implements Tool {
    */
   public int run(String[] args) {
     try {
-      copy(conf, Arguments.valueOf(args, conf));
+      copy(conf, Arguments.valueOf(args, conf, wld));
       return 0;
     } catch (IllegalArgumentException e) {
       System.err.println(StringUtils.stringifyException(e) + "\n" + usage);

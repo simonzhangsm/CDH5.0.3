@@ -40,6 +40,7 @@ import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 /**
  * This program uses map/reduce to just run a distributed job where there is
@@ -77,6 +78,8 @@ import org.apache.hadoop.util.ToolRunner;
  * and ones supported by {@link GenericOptionsParser} via the command-line.
  */
 public class RandomWriter extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   public static final String TOTAL_BYTES = "mapreduce.randomwriter.totalbytes";
   public static final String BYTES_PER_MAP = 
     "mapreduce.randomwriter.bytespermap";
@@ -242,6 +245,8 @@ public class RandomWriter extends Configured implements Tool {
     }
     
     Path outDir = new Path(args[0]);
+    wld.addArg(args[0]);
+    wld.embedConf(getConf());
     Configuration conf = getConf();
     JobClient client = new JobClient(conf);
     ClusterStatus cluster = client.getClusterStatus();

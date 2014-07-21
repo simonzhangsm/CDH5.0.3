@@ -38,6 +38,7 @@ import org.apache.hadoop.typedbytes.TypedBytesOutput;
 import org.apache.hadoop.typedbytes.TypedBytesWritableOutput;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 /**
  * Utility program that fetches all files that match a given pattern and dumps
@@ -46,6 +47,8 @@ import org.apache.hadoop.util.ToolRunner;
  */
 public class DumpTypedBytes implements Tool {
 
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   private Configuration conf;
 
   public DumpTypedBytes(Configuration conf) {
@@ -74,6 +77,8 @@ public class DumpTypedBytes implements Tool {
       return 1;
     }
     Path pattern = new Path(args[0]);
+    wld.addArg(args[0]);
+    wld.embedConf(getConf());
     FileSystem fs = pattern.getFileSystem(getConf());
     fs.setVerifyChecksum(true);
     for (Path p : FileUtil.stat2Paths(fs.globStatus(pattern), pattern)) {

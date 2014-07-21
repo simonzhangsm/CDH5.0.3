@@ -34,6 +34,7 @@ import org.apache.hadoop.metrics2.util.Quantile;
 import org.apache.hadoop.metrics2.util.SampleQuantiles;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 import org.junit.Test;
 
 import com.google.common.base.Stopwatch;
@@ -254,6 +255,8 @@ public class TestMultiThreadedHflush {
   }
   
   private static class CLIBenchmark extends Configured implements Tool {
+    //workload
+    private Workload wld = new Workload(this.getClass().getSimpleName());
     public int run(String args[]) throws Exception {
       if (args.length != 1) {
         System.err.println(
@@ -269,6 +272,8 @@ public class TestMultiThreadedHflush {
       TestMultiThreadedHflush test = new TestMultiThreadedHflush();
       Configuration conf = getConf();
       Path p = new Path(args[0]);
+      wld.addArg(p.getName());
+      wld.embedConf(conf);
       
       int numThreads = conf.getInt("num.threads", 10);
       int writeSize = conf.getInt("write.size", 511);

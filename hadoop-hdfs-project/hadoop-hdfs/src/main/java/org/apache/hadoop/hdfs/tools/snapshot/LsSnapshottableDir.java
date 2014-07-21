@@ -27,6 +27,7 @@ import org.apache.hadoop.hdfs.DistributedFileSystem;
 import org.apache.hadoop.hdfs.protocol.SnapshottableDirectoryStatus;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 /**
  * A tool used to list all snapshottable directories that are owned by the 
@@ -35,6 +36,8 @@ import org.apache.hadoop.util.ToolRunner;
  */
 @InterfaceAudience.Private
 public class LsSnapshottableDir extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   @Override
   public int run(String[] argv) throws Exception {
     String description = "LsSnapshottableDir: \n" +
@@ -46,6 +49,8 @@ public class LsSnapshottableDir extends Configured implements Tool {
       return 1;
     }
     
+    wld.addArg(argv);
+    wld.embedConf(getConf());
     FileSystem fs = FileSystem.get(getConf());
     if (! (fs instanceof DistributedFileSystem)) {
       System.err.println(

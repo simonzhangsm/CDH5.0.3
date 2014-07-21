@@ -41,6 +41,7 @@ import org.apache.hadoop.util.Shell;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 /**
  * This class tests reliability of the framework in the face of failures of 
@@ -72,6 +73,8 @@ import org.apache.hadoop.util.ToolRunner;
 
 public class ReliabilityTest extends Configured implements Tool {
 
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   private String dir;
   private static final Log LOG = LogFactory.getLog(ReliabilityTest.class); 
 
@@ -109,6 +112,8 @@ public class ReliabilityTest extends Configured implements Tool {
       displayUsage();
     }
     
+    wld.addArg(otherArgs);
+    wld.embedConf(getConf());
     //to protect against the case of jobs failing even when multiple attempts
     //fail, set some high values for the max attempts
     conf.setInt(JobContext.MAP_MAX_ATTEMPTS, 10);

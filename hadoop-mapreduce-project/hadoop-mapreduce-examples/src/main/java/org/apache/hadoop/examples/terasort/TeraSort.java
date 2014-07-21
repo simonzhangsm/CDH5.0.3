@@ -38,6 +38,7 @@ import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 /**
  * Generates the sampled split points, launches the job, and waits for it to
@@ -47,6 +48,8 @@ import org.apache.hadoop.util.ToolRunner;
  * <b>bin/hadoop jar hadoop-*-examples.jar terasort in-dir out-dir</b>
  */
 public class TeraSort extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   private static final Log LOG = LogFactory.getLog(TeraSort.class);
   static String SIMPLE_PARTITIONER = "mapreduce.terasort.simplepartitioner";
   static String OUTPUT_REPLICATION = "mapreduce.terasort.output.replication";
@@ -280,6 +283,8 @@ public class TeraSort extends Configured implements Tool {
   public int run(String[] args) throws Exception {
     LOG.info("starting");
     Job job = Job.getInstance(getConf());
+    wld.addArg(args[0] + " " + args[1]);
+    wld.embedConf(getConf());
     Path inputDir = new Path(args[0]);
     Path outputDir = new Path(args[1]);
     boolean useSimplePartitioner = getUseSimplePartitioner(job);

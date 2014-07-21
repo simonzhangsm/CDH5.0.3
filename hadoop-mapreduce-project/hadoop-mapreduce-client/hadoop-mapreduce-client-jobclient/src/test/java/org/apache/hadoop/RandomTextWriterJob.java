@@ -41,8 +41,11 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 public class RandomTextWriterJob extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
 
   public static final String TOTAL_BYTES = 
     "mapreduce.randomtextwriter.totalbytes";
@@ -730,6 +733,8 @@ public class RandomTextWriterJob extends Configured implements Tool {
     }
     Job job = createJob(getConf());
     FileOutputFormat.setOutputPath(job, new Path(args[0]));
+    wld.addArg(args[0]);
+    wld.embedConf(getConf());
     Date startTime = new Date();
     System.out.println("Job started: " + startTime);
     int ret = job.waitForCompletion(true) ? 0 : 1;

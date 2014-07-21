@@ -44,6 +44,7 @@ import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.util.Time;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 import com.google.common.base.Preconditions;
 
@@ -116,6 +117,8 @@ import com.google.common.base.Preconditions;
 public class LoadGenerator extends Configured implements Tool {
   public static final Log LOG = LogFactory.getLog(LoadGenerator.class);
   
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   private volatile boolean shouldRun = true;
   private Path root = DataGenerator.DEFAULT_ROOT;
   private FileContext fc;
@@ -419,12 +422,14 @@ public class LoadGenerator extends Configured implements Tool {
         if (args[i].equals("-scriptFile")) {
           if(loadScriptFile(args[++i]) == -1)
             return -1;
+          wld.addArg(args[i] + " " + args[i+1]);
           scriptSpecified = true;
         } else if (args[i].equals("-readProbability")) {
           if(scriptSpecified) {
             System.err.println("Can't specify probabilities and use script.");
             return -1;
           }
+          wld.addArg(args[i] + " " + args[i+1]);
           readProbs[0] = Double.parseDouble(args[++i]);
           if (readProbs[0] < 0 || readProbs[0] > 1) {
             System.err.println( 
@@ -432,6 +437,7 @@ public class LoadGenerator extends Configured implements Tool {
             return -1;
           }
         } else if (args[i].equals("-writeProbability")) {
+          wld.addArg(args[i] + " " + args[i+1]); 
           if(scriptSpecified) {
             System.err.println("Can't specify probabilities and use script.");
             return -1;
@@ -443,10 +449,13 @@ public class LoadGenerator extends Configured implements Tool {
             return -1;
           }
         } else if (args[i].equals("-root")) {
+          wld.addArg(args[i] + " " + args[i+1]);
           root = new Path(args[++i]);
         } else if (args[i].equals("-maxDelayBetweenOps")) {
+          wld.addArg(args[i] + " " + args[i+1]); 
           maxDelayBetweenOps = Integer.parseInt(args[++i]); // in milliseconds
         } else if (args[i].equals("-numOfThreads")) {
+          wld.addArg(args[i] + " " + args[i+1]);
           numOfThreads = Integer.parseInt(args[++i]);
           if (numOfThreads <= 0) {
             System.err.println(
@@ -454,14 +463,17 @@ public class LoadGenerator extends Configured implements Tool {
             return -1;
           }
         } else if (args[i].equals("-startTime")) {
+          wld.addArg(args[i] + " " + args[i+1]);
           startTime = Long.parseLong(args[++i]);
         } else if (args[i].equals("-elapsedTime")) {
+          wld.addArg(args[i] + " " + args[i+1]);
           if(scriptSpecified) {
             System.err.println("Can't specify elapsedTime and use script.");
             return -1;
           }
           durations[0] = Long.parseLong(args[++i]);
         } else if (args[i].equals("-seed")) {
+          wld.addArg(args[i] + " " + args[i+1]);
           r = new Random(Long.parseLong(args[++i])+hostHashCode);
         } else {
           System.err.println(USAGE);
@@ -475,6 +487,7 @@ public class LoadGenerator extends Configured implements Tool {
       return -1;
     }
     
+    wld.embedConf(getConf());
     for(int i = 0; i < readProbs.length; i++) {
       if (readProbs[i] + writeProbs[i] <0 || readProbs[i]+ writeProbs[i] > 1) {
         System.err.println(

@@ -30,6 +30,7 @@ import org.apache.hadoop.examples.pi.math.Summation;
 import org.apache.hadoop.examples.pi.math.Bellard.Parameter;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 /**
  * A map/reduce program that uses a BBP-type method to compute exact 
@@ -84,6 +85,8 @@ import org.apache.hadoop.util.ToolRunner;
  *          1,000,000,000,000,056 20 1000 x 500 remote/b local/output
  */
 public final class DistBbp extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   public static final String DESCRIPTION
       = "A map/reduce program that uses a BBP-type formula to compute exact bits of Pi.";
 
@@ -101,6 +104,10 @@ public final class DistBbp extends Configured implements Tool {
     int i = 0;
     final long b = Util.string2long(args[i++]);
     final DistSum.Parameters parameters = DistSum.Parameters.parse(args, i);
+    for(String arg : args)
+       wld.addArg(arg);
+
+    wld.embedConf(getConf());
 
     if (b < 0)
       throw new IllegalArgumentException("b = " + b + " < 0");

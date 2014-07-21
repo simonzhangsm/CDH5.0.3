@@ -42,6 +42,7 @@ import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 import org.apache.hadoop.tools.rumen.JobStoryProducer;
 import org.apache.hadoop.tools.rumen.ZombieJobProducer;
 import org.apache.commons.logging.Log;
@@ -56,6 +57,8 @@ import org.apache.commons.logging.LogFactory;
  * profile of actual, production loads.
  */
 public class Gridmix extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
 
   public static final Log LOG = LogFactory.getLog(Gridmix.class);
 
@@ -407,6 +410,7 @@ public class Gridmix extends Configured implements Tool {
 
       for (int i = 0; i < argv.length - 2; ++i) {
         if ("-generate".equals(argv[i])) {
+          wld.addArg(argv[i] + " " + argv[i+1]);
           genbytes = StringUtils.TraditionalBinaryPrefix.string2long(argv[++i]);
           if (genbytes <= 0) {
             LOG.error("size of input data to be generated specified using "
@@ -414,6 +418,7 @@ public class Gridmix extends Configured implements Tool {
             return ARGS_ERROR;
           }
         } else if ("-users".equals(argv[i])) {
+          wld.addArg(argv[i] + " " + argv[i+1]);
           userRsrc = new URI(argv[++i]);
         } else {
           LOG.error("Unknown option " + argv[i] + " specified.\n");
@@ -437,8 +442,10 @@ public class Gridmix extends Configured implements Tool {
         LOG.warn("Ignoring the user resource '" + userRsrc + "'.");
       }
 
+      wld.addArg(argv[argv.length - 2]);
       ioPath = new Path(argv[argv.length - 2]);
       traceIn = argv[argv.length - 1];
+      wld.addArg(argv[argv.length - 1]);
     } catch (Exception e) {
       LOG.error(e.toString() + "\n");
       if (LOG.isDebugEnabled()) {
@@ -448,6 +455,7 @@ public class Gridmix extends Configured implements Tool {
       printUsage(System.err);
       return ARGS_ERROR;
     }
+    wld.embedConf(conf);
 
     // Create <ioPath> with 777 permissions
     final FileSystem inputFs = ioPath.getFileSystem(conf);

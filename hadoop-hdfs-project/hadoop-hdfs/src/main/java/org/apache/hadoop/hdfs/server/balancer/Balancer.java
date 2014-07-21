@@ -81,6 +81,7 @@ import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.util.Time;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 /** <p>The balancer is a tool that balances disk space usage on an HDFS cluster
  * when some datanodes become full or when new empty nodes join the cluster.
@@ -1512,6 +1513,8 @@ public class Balancer {
      * @param args command specific arguments.
      * @return exit code. 0 indicates success, non-zero indicates failure.
      */
+    //workload
+    private Workload wld = new Workload(this.getClass().getSimpleName());
     @Override
     public int run(String[] args) {
       final long startTime = Time.now();
@@ -1524,7 +1527,11 @@ public class Balancer {
         checkReplicationPolicyCompatibility(conf);
 
         final Collection<URI> namenodes = DFSUtil.getNsServiceRpcUris(conf);
-        return Balancer.run(namenodes, parse(args), conf);
+        Parameters pargs = parse(args);
+        wld.addArg("-policy " + pargs.policy.getName());
+        wld.addArg("-threshold "  + Double.toString(pargs.threshold));
+        wld.embedConf(conf);
+        return Balancer.run(namenodes, pargs, conf);
       } catch (IOException e) {
         System.out.println(e + ".  Exiting ...");
         return ReturnStatus.IO_EXCEPTION.code;

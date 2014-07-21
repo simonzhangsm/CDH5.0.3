@@ -43,6 +43,7 @@ import org.apache.hadoop.security.authentication.client.AuthenticationException;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 /**
  * This class provides rudimentary checking of DFS volumes for errors and
@@ -70,6 +71,8 @@ import org.apache.hadoop.util.ToolRunner;
  */
 @InterfaceAudience.Private
 public class DFSck extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   static{
     HdfsConfiguration.init();
   }
@@ -266,21 +269,24 @@ public class DFSck extends Configured implements Tool {
     String dir = null;
     boolean doListCorruptFileBlocks = false;
     for (int idx = 0; idx < args.length; idx++) {
-      if (args[idx].equals("-move")) { url.append("&move=1"); }
-      else if (args[idx].equals("-delete")) { url.append("&delete=1"); }
-      else if (args[idx].equals("-files")) { url.append("&files=1"); }
-      else if (args[idx].equals("-openforwrite")) { url.append("&openforwrite=1"); }
-      else if (args[idx].equals("-blocks")) { url.append("&blocks=1"); }
-      else if (args[idx].equals("-locations")) { url.append("&locations=1"); }
-      else if (args[idx].equals("-racks")) { url.append("&racks=1"); }
+      if (args[idx].equals("-move")) { wld.addArg("-move"); url.append("&move=1"); }
+      else if (args[idx].equals("-delete")) { wld.addArg("-delete"); url.append("&delete=1"); }
+      else if (args[idx].equals("-files")) { wld.addArg("-files"); url.append("&files=1"); }
+      else if (args[idx].equals("-openforwrite")) { wld.addArg("-openforwrite"); url.append("&openforwrite=1"); }
+      else if (args[idx].equals("-blocks")) { wld.addArg("-blocks"); url.append("&blocks=1"); }
+      else if (args[idx].equals("-locations")) { wld.addArg("-locations"); url.append("&locations=1"); }
+      else if (args[idx].equals("-racks")) { wld.addArg("-racks"); url.append("&racks=1"); }
       else if (args[idx].equals("-list-corruptfileblocks")) {
+        wld.addArg("-list-corruptfileblocks");
         url.append("&listcorruptfileblocks=1");
         doListCorruptFileBlocks = true;
       } else if (args[idx].equals("-includeSnapshots")) {
+        wld.addArg("-includeSnapshots");
         url.append("&includeSnapshots=1");
       } else if (!args[idx].startsWith("-")) {
         if (null == dir) {
           dir = args[idx];
+          wld.addArg(dir);
         } else {
           System.err.println("fsck: can only operate on one path at a time '"
               + args[idx] + "'");
@@ -293,6 +299,7 @@ public class DFSck extends Configured implements Tool {
         return -1;
       }
     }
+    wld.embedConf(getConf());
     if (null == dir) {
       dir = "/";
     }

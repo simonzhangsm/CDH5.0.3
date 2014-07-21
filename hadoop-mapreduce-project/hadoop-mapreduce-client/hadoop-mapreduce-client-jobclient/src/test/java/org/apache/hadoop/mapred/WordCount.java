@@ -41,6 +41,7 @@ import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 /**
  * This is an example Hadoop Map/Reduce application.
@@ -58,6 +59,8 @@ public class WordCount extends Configured implements Tool {
    * For each line of input, break the line into words and emit them as
    * (<b>word</b>, <b>1</b>).
    */
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   public static class MapClass extends MapReduceBase
     implements Mapper<LongWritable, Text, Text, IntWritable> {
     
@@ -122,10 +125,13 @@ public class WordCount extends Configured implements Tool {
     for(int i=0; i < args.length; ++i) {
       try {
         if ("-m".equals(args[i])) {
+          wld.addArg(args[i] + " " + args[i+1]);
           conf.setNumMapTasks(Integer.parseInt(args[++i]));
         } else if ("-r".equals(args[i])) {
+          wld.addArg(args[i] + " " + args[i+1]);
           conf.setNumReduceTasks(Integer.parseInt(args[++i]));
         } else {
+          wld.addArg(args[i]);
           other_args.add(args[i]);
         }
       } catch (NumberFormatException except) {
@@ -137,6 +143,7 @@ public class WordCount extends Configured implements Tool {
         return printUsage();
       }
     }
+    wld.embedConf(getConf());
     // Make sure there are exactly 2 parameters left.
     if (other_args.size() != 2) {
       System.out.println("ERROR: Wrong number of parameters: " +

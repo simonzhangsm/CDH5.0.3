@@ -40,6 +40,7 @@ import org.apache.commons.logging.LogFactory;
 
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 import org.apache.hadoop.util.LineReader;
 
 import org.apache.hadoop.conf.Configured;
@@ -68,6 +69,8 @@ import org.codehaus.jackson.JsonProcessingException;
 @Deprecated
 public class HadoopLogsAnalyzer extends Configured implements Tool {
 
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   // output streams
   private PrintStream statusOutput = System.out;
   private PrintStream statisticalOutput = System.out;
@@ -316,11 +319,13 @@ public class HadoopLogsAnalyzer extends Configured implements Tool {
       throw new IllegalArgumentException("No input specified.");
     } else {
       inputFilename = args[args.length - 1];
+      wld.addArg(inputFilename);
     }
 
     for (int i = 0; i < args.length - (inputFilename == null ? 0 : 1); ++i) {
       if ("-h".equals(args[i].toLowerCase())
           || "-help".equals(args[i].toLowerCase())) {
+        wld.addArg(args[i]);
         usage();
         return 0;
       }
@@ -328,27 +333,32 @@ public class HadoopLogsAnalyzer extends Configured implements Tool {
       if ("-c".equals(args[i].toLowerCase())
           || "-collect-prefixes".equals(args[i].toLowerCase())) {
         collecting = true;
+        wld.addArg(args[i]);
         continue;
       }
 
       // these control the job digest
       if ("-write-job-trace".equals(args[i].toLowerCase())) {
+        wld.addArg(args[i] + " " + args[i+1]);
         ++i;
         jobTraceFilename = new Path(args[i]);
         continue;
       }
 
       if ("-single-line-job-traces".equals(args[i].toLowerCase())) {
+        wld.addArg(args[i]);
         prettyprintTrace = false;
         continue;
       }
 
       if ("-omit-task-details".equals(args[i].toLowerCase())) {
+        wld.addArg(args[i]);
         omitTaskDetails = true;
         continue;
       }
 
       if ("-write-topology".equals(args[i].toLowerCase())) {
+        wld.addArg(args[i] + " " + args[i+1]);
         ++i;
         topologyFilename = new Path(args[i]);
         continue;
@@ -357,13 +367,16 @@ public class HadoopLogsAnalyzer extends Configured implements Tool {
       if ("-job-digest-spectra".equals(args[i].toLowerCase())) {
         ArrayList<Integer> values = new ArrayList<Integer>();
 
+        String jobDisSpec = args[i].toLowerCase();
         ++i;
 
         while (i < args.length && Character.isDigit(args[i].charAt(0))) {
+          jobDisSpec += " " + args[i];
           values.add(Integer.parseInt(args[i]));
           ++i;
         }
 
+        wld.addArg(jobDisSpec);
         if (values.size() == 0) {
           throw new IllegalArgumentException("Empty -job-digest-spectra list");
         }
@@ -386,6 +399,7 @@ public class HadoopLogsAnalyzer extends Configured implements Tool {
 
       if ("-d".equals(args[i].toLowerCase())
           || "-debug".equals(args[i].toLowerCase())) {
+        wld.addArg(args[i]);
         debug = true;
         continue;
       }
@@ -393,6 +407,7 @@ public class HadoopLogsAnalyzer extends Configured implements Tool {
       if ("-spreads".equals(args[i].toLowerCase())) {
         int min = Integer.parseInt(args[i + 1]);
         int max = Integer.parseInt(args[i + 2]);
+        wld.addArg(args[i] + " " + args[i + 1] + " " + args[i + 2]);
 
         if (min < max && min < 1000 && max < 1000) {
           spreadMin = min;
@@ -405,27 +420,33 @@ public class HadoopLogsAnalyzer extends Configured implements Tool {
 
       // These control log-wide CDF outputs
       if ("-delays".equals(args[i].toLowerCase())) {
+        wld.addArg(args[i]);
         delays = true;
         continue;
       }
 
       if ("-runtimes".equals(args[i].toLowerCase())) {
+        wld.addArg(args[i]);
         runtimes = true;
         continue;
       }
 
       if ("-tasktimes".equals(args[i].toLowerCase())) {
+        wld.addArg(args[i]);
         collectTaskTimes = true;
         continue;
       }
 
       if ("-v1".equals(args[i].toLowerCase())) {
+        wld.addArg(args[i]);
         version = 1;
         continue;
       }
 
       throw new IllegalArgumentException("Unrecognized argument: " + args[i]);
     }
+
+    wld.embedConf(getConf());
 
     runTimeDists = newDistributionBlock();
     delayTimeDists = newDistributionBlock();

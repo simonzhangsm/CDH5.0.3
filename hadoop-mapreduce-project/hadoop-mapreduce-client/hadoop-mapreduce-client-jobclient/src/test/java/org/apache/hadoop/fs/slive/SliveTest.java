@@ -44,6 +44,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 /**
  * Slive test entry point + main program
@@ -60,6 +61,8 @@ import org.apache.hadoop.util.ToolRunner;
  */
 @SuppressWarnings("deprecation")
 public class SliveTest implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
 
   private static final Log LOG = LogFactory.getLog(SliveTest.class);
 
@@ -88,6 +91,8 @@ public class SliveTest implements Tool {
       LOG.error("Unable to parse arguments due to error: ", e);
       return 1;
     }
+    wld.addArg(args);
+    wld.embedConf(getConf());
     LOG.info("Running with option list " + Helper.stringifyArray(args, " "));
     ConfigExtractor config = null;
     try {

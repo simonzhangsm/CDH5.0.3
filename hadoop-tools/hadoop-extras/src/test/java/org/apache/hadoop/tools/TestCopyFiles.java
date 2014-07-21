@@ -49,6 +49,7 @@ import org.apache.hadoop.hdfs.server.namenode.FSNamesystem;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 import org.apache.log4j.Level;
 
 
@@ -577,7 +578,8 @@ public class TestCopyFiles extends TestCase {
           "file:///"+TEST_ROOT_DIR+"/dest2/"+fname};
       Configuration conf = new Configuration();
       JobConf job = new JobConf(conf, DistCpV1.class);
-      DistCpV1.Arguments distcpArgs = DistCpV1.Arguments.valueOf(args, conf);
+      Workload wld = new Workload("testCopySingleFile");
+      DistCpV1.Arguments distcpArgs = DistCpV1.Arguments.valueOf(args, conf,wld);
       assertFalse("Single file update failed to skip copying even though the " 
           + "file exists at destination.", DistCpV1.setup(conf, job, distcpArgs));
       

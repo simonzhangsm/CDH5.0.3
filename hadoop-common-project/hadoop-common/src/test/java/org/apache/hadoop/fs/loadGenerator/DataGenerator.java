@@ -33,6 +33,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.Options.CreateOpts;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 /**
  * This program reads the directory structure and file structure from
@@ -59,6 +60,8 @@ public class DataGenerator extends Configured implements Tool {
   
   /** default name of the root where the test namespace will be placed under */
   final static Path DEFAULT_ROOT = new Path("/testLoadSpace");
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   
   /** Main function.
    * It first parses the command line arguments.
@@ -91,8 +94,10 @@ public class DataGenerator extends Configured implements Tool {
 
     for (int i = 0; i < args.length; i++) { // parse command line
       if (args[i].equals("-root")) {
+        wld.addArg(args[i] + " " + args[++i]);
         root = new Path(args[++i]);
       } else if (args[i].equals("-inDir")) {
+        wld.addArg(args[i] + " " + args[++i]);
         inDir = new File(args[++i]);
       } else {
         System.err.println(USAGE);
@@ -100,6 +105,7 @@ public class DataGenerator extends Configured implements Tool {
         System.exit(-1);
       }
     }
+    wld.embedConf(getConf());
     return 0;
   }
   

@@ -34,6 +34,8 @@ import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.Tool;
+import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.client.api.YarnClient;
@@ -49,6 +51,8 @@ import com.google.common.annotations.VisibleForTesting;
 @Public
 @Evolving
 public class LogsCLI extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
 
   private static final String CONTAINER_ID_OPTION = "containerId";
   private static final String APPLICATION_ID_OPTION = "applicationId";
@@ -57,7 +61,8 @@ public class LogsCLI extends Configured implements Tool {
 
   @Override
   public int run(String[] args) throws Exception {
-
+    wld.addArg(args);
+    wld.embedConf(getConf());
     Options opts = new Options();
     Option appIdOpt = new Option(APPLICATION_ID_OPTION, true, "ApplicationId (required)");
     appIdOpt.setRequired(true);
@@ -196,7 +201,7 @@ public class LogsCLI extends Configured implements Tool {
     Configuration conf = new YarnConfiguration();
     LogsCLI logDumper = new LogsCLI();
     logDumper.setConf(conf);
-    int exitCode = logDumper.run(args);
+    int exitCode = ToolRunner.run(logDumper, args);
     System.exit(exitCode);
   }
 

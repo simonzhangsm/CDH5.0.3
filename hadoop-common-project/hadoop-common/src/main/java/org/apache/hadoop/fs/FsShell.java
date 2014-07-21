@@ -33,6 +33,7 @@ import org.apache.hadoop.fs.shell.CommandFactory;
 import org.apache.hadoop.fs.shell.FsCommand;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 /** Provide command line access to a FileSystem. */
 @InterfaceAudience.Private
@@ -46,6 +47,9 @@ public class FsShell extends Configured implements Tool {
 
   private final String usagePrefix =
     "Usage: hadoop fs [generic options]";
+  
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
 
   /**
    * Default ctor with no configuration.  Be sure to invoke
@@ -237,7 +241,7 @@ public class FsShell extends Configured implements Tool {
    * run
    */
   @Override
-  public int run(String argv[]) throws Exception {
+  public int run(String[] argv) throws Exception {
     // initialize FsShell
     init();
 
@@ -246,6 +250,8 @@ public class FsShell extends Configured implements Tool {
       printUsage(System.err);
     } else {
       String cmd = argv[0];
+      wld.addArg(argv[0]);
+      wld.embedConf(getConf());
       Command instance = null;
       try {
         instance = commandFactory.getInstance(cmd);

@@ -49,6 +49,7 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.PureJavaCrc32;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 /**
  * Generate the official GraySort input data set.
@@ -66,6 +67,8 @@ import org.apache.hadoop.util.ToolRunner;
  * <b>bin/hadoop jar hadoop-*-examples.jar teragen 10000000000 in-dir</b>
  */
 public class TeraGen extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   private static final Log LOG = LogFactory.getLog(TeraSort.class);
 
   public static enum Counters {CHECKSUM}
@@ -287,6 +290,8 @@ public class TeraGen extends Configured implements Tool {
       usage();
       return 2;
     }
+    wld.addArg(args[0] + " " + args[1]);
+    wld.embedConf(getConf());
     setNumberOfRows(job, parseHumanLong(args[0]));
     Path outputDir = new Path(args[1]);
     if (outputDir.getFileSystem(getConf()).exists(outputDir)) {

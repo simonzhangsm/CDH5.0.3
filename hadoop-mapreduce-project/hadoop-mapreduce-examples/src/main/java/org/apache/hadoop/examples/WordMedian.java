@@ -37,10 +37,13 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 import com.google.common.base.Charsets;
 
 public class WordMedian extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
 
   private double median = 0;
   private final static IntWritable ONE = new IntWritable(1);
@@ -203,6 +206,8 @@ public class WordMedian extends Configured implements Tool {
 
     median = readAndFindMedian(args[1], medianIndex1, medianIndex2, conf);
 
+    wld.addArg(args[0] + " " + args[1]);
+    wld.embedConf(conf);
     return (result ? 0 : 1);
   }
 

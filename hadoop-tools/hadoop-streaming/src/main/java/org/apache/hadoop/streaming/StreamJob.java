@@ -73,12 +73,14 @@ import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hadoop.util.RunJar;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.util.Tool;
+import org.apache.hadoop.workload.Workload;
 
 /** All the client-side work happens here.
  * (Jar packaging, MapRed job submission and monitoring)
  */
 public class StreamJob implements Tool {
-
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   protected static final Log LOG = LogFactory.getLog(StreamJob.class.getName());
   final static String REDUCE_NONE = "NONE";
 
@@ -118,13 +120,15 @@ public class StreamJob implements Tool {
       init();
 
       preProcessArgs();
-      parseArgv();
+      CommandLine cmdline = parseArgv();
       if (printUsage) {
         printUsage(detailedUsage_);
         return 0;
       }
       postProcessArgs();
 
+      wld.addArg(cmdline);
+      wld.embedConf(getConf());
       setJobConf();
     } catch (IllegalArgumentException ex) {
       //ignore, since log will already be printed
@@ -246,7 +250,7 @@ public class StreamJob implements Tool {
     return cmd;
   }
 
-  void parseArgv() {
+  CommandLine parseArgv() {
     CommandLine cmdLine = null;
     try {
       cmdLine = parser.parse(allOptions, argv_);
@@ -266,7 +270,7 @@ public class StreamJob implements Tool {
       detailedUsage_ = cmdLine.hasOption("info");
       if (cmdLine.hasOption("help") || detailedUsage_) {
         printUsage = true;
-        return;
+        return cmdLine;
       }
       verbose_ =  cmdLine.hasOption("verbose");
       background_ =  cmdLine.hasOption("background");
@@ -369,6 +373,7 @@ public class StreamJob implements Tool {
     } else {
       exitUsage(argv_.length > 0 && "-info".equals(argv_[0]));
     }
+    return cmdLine;
   }
 
   protected void msg(String msg) {

@@ -36,6 +36,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.util.Time;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 import org.apache.log4j.Level;
 
 /**
@@ -44,6 +45,8 @@ import org.apache.log4j.Level;
  * the main of this class and optionally include a repetition count.
  */
 public class BenchmarkThroughput extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
 
   // the property in the config that specifies a working directory
   private LocalDirAllocator dir;
@@ -183,11 +186,13 @@ public class BenchmarkThroughput extends Configured implements Tool {
         printUsage();
         return -1;
       }
+      wld.addArg(args[0]);
     } else if (args.length > 1) {
       printUsage();
       return -1;
     }
     Configuration conf = getConf();
+    wld.embedConf(conf);
     // the size of the file to write
     long SIZE = conf.getLong("dfsthroughput.file.size",
         10L * 1024 * 1024 * 1024);

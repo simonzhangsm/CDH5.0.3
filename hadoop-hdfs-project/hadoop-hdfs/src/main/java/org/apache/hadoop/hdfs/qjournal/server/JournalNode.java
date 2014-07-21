@@ -45,6 +45,7 @@ import org.apache.hadoop.util.DiskChecker;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 import org.mortbay.util.ajax.JSON;
 
 import com.google.common.base.Preconditions;
@@ -59,6 +60,8 @@ import com.google.common.collect.Maps;
  */
 @InterfaceAudience.Private
 public class JournalNode implements Tool, Configurable, JournalNodeMXBean {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   public static final Log LOG = LogFactory.getLog(JournalNode.class);
   private Configuration conf;
   private JournalNodeRpcServer rpcServer;
@@ -115,6 +118,8 @@ public class JournalNode implements Tool, Configurable, JournalNodeMXBean {
 
   @Override
   public int run(String[] args) throws Exception {
+    wld.addArg("JournalNode");
+    wld.embedConf(getConf());
     start();
     return join();
   }

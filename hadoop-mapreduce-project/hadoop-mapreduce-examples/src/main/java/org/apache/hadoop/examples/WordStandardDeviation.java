@@ -36,10 +36,13 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 import com.google.common.base.Charsets;
 
 public class WordStandardDeviation extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
 
   private double stddev = 0;
 
@@ -205,6 +208,8 @@ public class WordStandardDeviation extends Configured implements Tool {
     // read output and calculate standard deviation
     stddev = readAndCalcStdDev(outputpath, conf);
 
+    wld.addArg(args[0] + " " + args[1]);
+    wld.embedConf(conf);
     return (result ? 0 : 1);
   }
 

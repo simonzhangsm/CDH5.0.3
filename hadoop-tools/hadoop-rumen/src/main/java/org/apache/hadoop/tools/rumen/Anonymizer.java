@@ -32,6 +32,7 @@ import org.apache.hadoop.io.compress.Compressor;
 import org.apache.hadoop.mapreduce.ID;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 import org.apache.hadoop.tools.rumen.datatypes.*;
 import org.apache.hadoop.tools.rumen.serializers.*;
 import org.apache.hadoop.tools.rumen.state.*;
@@ -44,6 +45,8 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.module.SimpleModule;
 
 public class Anonymizer extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   private boolean anonymizeTrace = false;
   private Path inputTracePath = null;
   private Path outputTracePath = null;
@@ -60,18 +63,21 @@ public class Anonymizer extends Configured implements Tool {
   
   private void initialize(String[] args) throws Exception {
     try {
+      wld.clearArgs();
       for (int i = 0; i < args.length; ++i) {
         if ("-trace".equals(args[i])) {
           anonymizeTrace = true;
           inputTracePath = new Path(args[i+1]);
           outputTracePath = new Path(args[i+2]);
           i +=2;
+          wld.addArg(args[i] + " " + args[i+1] + " " + args[i+2]);
         }
         if ("-topology".equals(args[i])) {
           anonymizeTopology = true;
           inputTopologyPath = new Path(args[i+1]);
           outputTopologyPath = new Path(args[i+2]);
           i +=2;
+          wld.addArg(args[i] + " " + args[i+1] + " " + args[i+2]);
         }
       }
     } catch (Exception e) {
@@ -82,6 +88,7 @@ public class Anonymizer extends Configured implements Tool {
       throw new IllegalArgumentException("Invalid arguments list!");
     }
     
+    wld.embedConf(getConf());
     statePool = new StatePool();
     // initialize the state manager after the anonymizers are registered
     statePool.initialize(getConf());

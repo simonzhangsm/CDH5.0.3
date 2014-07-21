@@ -49,8 +49,11 @@ import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 public class GenericMRLoadGenerator extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   public static String MAP_PRESERVE_PERCENT = 
     "mapreduce.loadgen.sort.map.preserve.percent";
   public static String REDUCE_PRESERVE_PERCENT = 
@@ -75,7 +78,7 @@ public class GenericMRLoadGenerator extends Configured implements Tool {
   /**
    * Configure a job given argv.
    */
-  public static boolean parseArgs(String[] argv, Job job) throws IOException {
+  public static boolean parseArgs(String[] argv, Job job, Workload wld) throws IOException {
     if (argv.length < 1) {
       return 0 == printUsage();
     }
@@ -87,28 +90,38 @@ public class GenericMRLoadGenerator extends Configured implements Tool {
       }
       try {
         if ("-r".equals(argv[i])) {
+          wld.addArg(argv[i] + " " + argv[i+1]);
           job.setNumReduceTasks(Integer.parseInt(argv[++i]));
         } else if ("-inFormat".equals(argv[i])) {
+          wld.addArg(argv[i] + " " + argv[i+1]);
           job.setInputFormatClass(
               Class.forName(argv[++i]).asSubclass(InputFormat.class));
         } else if ("-outFormat".equals(argv[i])) {
+          wld.addArg(argv[i] + " " + argv[i+1]);
           job.setOutputFormatClass(
               Class.forName(argv[++i]).asSubclass(OutputFormat.class));
         } else if ("-outKey".equals(argv[i])) {
+          wld.addArg(argv[i] + " " + argv[i+1]);
           job.setOutputKeyClass(
             Class.forName(argv[++i]).asSubclass(WritableComparable.class));
         } else if ("-outValue".equals(argv[i])) {
+          wld.addArg(argv[i] + " " + argv[i+1]);
           job.setOutputValueClass(
             Class.forName(argv[++i]).asSubclass(Writable.class));
         } else if ("-keepmap".equals(argv[i])) {
+          wld.addArg(argv[i] + " " + argv[i+1]);
           job.getConfiguration().set(MAP_PRESERVE_PERCENT, argv[++i]);
         } else if ("-keepred".equals(argv[i])) {
+          wld.addArg(argv[i] + " " + argv[i+1]);
           job.getConfiguration().set(REDUCE_PRESERVE_PERCENT, argv[++i]);
         } else if ("-outdir".equals(argv[i])) {
+          wld.addArg(argv[i] + " " + argv[i+1]);
           FileOutputFormat.setOutputPath(job, new Path(argv[++i]));
         } else if ("-indir".equals(argv[i])) {
+          wld.addArg(argv[i] + " " + argv[i+1]);
           FileInputFormat.addInputPaths(job, argv[++i]);
         } else if ("-inFormatIndirect".equals(argv[i])) {
+          wld.addArg(argv[i] + " " + argv[i+1]);
           job.getConfiguration().setClass(INDIRECT_INPUT_FORMAT,
               Class.forName(argv[++i]).asSubclass(InputFormat.class),
               InputFormat.class);
@@ -132,9 +145,10 @@ public class GenericMRLoadGenerator extends Configured implements Tool {
     job.setJarByClass(GenericMRLoadGenerator.class);
     job.setMapperClass(SampleMapper.class);
     job.setReducerClass(SampleReducer.class);
-    if (!parseArgs(argv, job)) {
+    if (!parseArgs(argv, job, wld)) {
       return -1;
     }
+    wld.embedConf(getConf());
 
     Configuration conf = job.getConfiguration();
     if (null == FileOutputFormat.getOutputPath(job)) {

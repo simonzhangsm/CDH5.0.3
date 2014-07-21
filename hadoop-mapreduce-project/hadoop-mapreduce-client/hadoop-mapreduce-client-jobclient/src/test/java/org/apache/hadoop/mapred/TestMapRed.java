@@ -46,6 +46,7 @@ import org.apache.hadoop.mapred.lib.IdentityReducer;
 import org.apache.hadoop.mapreduce.MRConfig;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;
@@ -110,6 +111,8 @@ public class TestMapRed extends Configured implements Tool {
    * of numbers in random order, but where each number appears
    * as many times as we were instructed.
    */
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   static class RandomGenMapper
     implements Mapper<IntWritable, IntWritable, IntWritable, IntWritable> {
     
@@ -784,6 +787,8 @@ public class TestMapRed extends Configured implements Tool {
     int i = 0;
     range = Integer.parseInt(argv[i++]);
     counts = Integer.parseInt(argv[i++]);
+    wld.addArg(argv[0] + " " + argv[1]);
+    wld.embedConf(getConf());
     launch();
     return 0;
   }

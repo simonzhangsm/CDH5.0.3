@@ -43,6 +43,8 @@ import org.apache.hadoop.hdfs.protocol.CachePoolStats;
 import org.apache.hadoop.hdfs.tools.TableListing.Justification;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.util.Tool;
+import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 import com.google.common.base.Joiner;
 
@@ -57,6 +59,8 @@ public class CacheAdmin extends Configured implements Tool {
    */
   private static final int MAX_LINE_WIDTH = 80;
 
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   public CacheAdmin() {
     this(null);
   }
@@ -80,10 +84,13 @@ public class CacheAdmin extends Configured implements Tool {
       printUsage(false);
       return 1;
     }
+    wld.addArg(args[0]);
     List<String> argsList = new LinkedList<String>();
     for (int j = 1; j < args.length; j++) {
       argsList.add(args[j]);
+      wld.addArg(args[j]);
     }
+    wld.embedConf(getConf());
     try {
       return command.run(getConf(), argsList);
     } catch (IllegalArgumentException e) {
@@ -94,7 +101,15 @@ public class CacheAdmin extends Configured implements Tool {
 
   public static void main(String[] argsArray) throws IOException {
     CacheAdmin cacheAdmin = new CacheAdmin(new Configuration());
-    System.exit(cacheAdmin.run(argsArray));
+    try{
+       System.exit(cacheAdmin.run(argsArray));
+    }catch(Exception e){
+       if (e instanceof IOException) {
+          throw (IOException)e;
+       } else {
+          throw new IOException(e);
+       }
+    }
   }
 
   private static DistributedFileSystem getDFS(Configuration conf)

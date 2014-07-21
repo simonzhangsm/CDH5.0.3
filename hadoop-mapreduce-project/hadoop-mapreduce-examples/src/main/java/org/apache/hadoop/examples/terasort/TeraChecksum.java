@@ -33,8 +33,11 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.PureJavaCrc32;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 public class TeraChecksum extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   static class ChecksumMapper 
       extends Mapper<Text, Text, NullWritable, Unsigned16> {
     private Unsigned16 checksum = new Unsigned16();
@@ -79,6 +82,8 @@ public class TeraChecksum extends Configured implements Tool {
       usage();
       return 2;
     }
+    wld.addArg(args[0] +" " + args[1]);
+    wld.embedConf(getConf());
     TeraInputFormat.setInputPaths(job, new Path(args[0]));
     FileOutputFormat.setOutputPath(job, new Path(args[1]));
     job.setJobName("TeraSum");

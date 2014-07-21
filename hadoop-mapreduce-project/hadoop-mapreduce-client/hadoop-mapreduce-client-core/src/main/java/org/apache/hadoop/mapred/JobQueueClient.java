@@ -30,6 +30,7 @@ import org.apache.hadoop.mapreduce.JobStatus;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 import com.google.common.base.Charsets;
 
@@ -43,6 +44,8 @@ import com.google.common.base.Charsets;
  **/
 
 class JobQueueClient extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
 
   JobClient jc;
 
@@ -72,15 +75,18 @@ class JobQueueClient extends Configured implements Tool {
     boolean displayQueueInfoWithoutJobs = false;
     boolean displayQueueAclsInfoForCurrentUser = false;
 
+    wld.addArg(cmd);
     if ("-list".equals(cmd)) {
       displayQueueList = true;
     } else if ("-showacls".equals(cmd)) {
       displayQueueAclsInfoForCurrentUser = true;
     } else if ("-info".equals(cmd)) {
       if (argv.length == 2 && !(argv[1].equals("-showJobs"))) {
+        wld.addArg(argv[1]);
         displayQueueInfoWithoutJobs = true;
       } else if (argv.length == 3) {
         if (argv[2].equals("-showJobs")) {
+          wld.addArg(argv[3]);
           displayQueueInfoWithJobs = true;
         } else {
           displayUsage(cmd);
@@ -95,6 +101,7 @@ class JobQueueClient extends Configured implements Tool {
       return exitcode;
     }
     
+    wld.embedConf(getConf());
     JobConf conf = new JobConf(getConf());
     init(conf);
     if (displayQueueList) {

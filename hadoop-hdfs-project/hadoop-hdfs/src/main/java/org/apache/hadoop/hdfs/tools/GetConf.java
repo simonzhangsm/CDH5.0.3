@@ -36,6 +36,7 @@ import org.apache.hadoop.hdfs.DFSUtil.ConfiguredNNAddress;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 /**
  * Tool for getting configuration information from a configuration file.
@@ -59,6 +60,8 @@ import org.apache.hadoop.util.ToolRunner;
  * </ul>
  */
 public class GetConf extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   private static final String DESCRIPTION = "hdfs getconf is utility for "
       + "getting configuration information from the config file.\n";
 
@@ -312,6 +315,9 @@ public class GetConf extends Configured implements Tool {
   @Override
   public int run(final String[] args) throws Exception {
     try {
+      for(String arg : args)
+	wld.addArg(arg);
+      wld.embedConf(getConf());
       return UserGroupInformation.getCurrentUser().doAs(
           new PrivilegedExceptionAction<Integer>() {
             @Override

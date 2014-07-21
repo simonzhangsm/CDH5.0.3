@@ -48,12 +48,15 @@ import org.apache.hadoop.mapred.SequenceFileRecordReader;
 import org.apache.hadoop.mapreduce.JobSubmissionFiles;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 /**
  * A Map-reduce program to recursively change files properties
  * such as owner, group and permission.
  */
 public class DistCh extends DistTool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   static final String NAME = "distch";
   static final String JOB_DIR_LABEL = NAME + ".job.dir";
   static final String OP_LIST_LABEL = NAME + ".op.list";
@@ -346,6 +349,7 @@ public class DistCh extends DistTool {
     try {
       for (int idx = 0; idx < args.length; idx++) {
         if ("-f".equals(args[idx])) {
+          wld.addArg(args[idx] + " " + args[idx+1]);
           if (++idx ==  args.length) {
             System.out.println("urilist_uri not specified");
             System.out.println(USAGE);
@@ -355,6 +359,7 @@ public class DistCh extends DistTool {
         } else if (Option.IGNORE_FAILURES.cmd.equals(args[idx])) {
           isIgnoreFailures = true;
         } else if ("-log".equals(args[idx])) {
+          wld.addArg(args[idx] + " " + args[idx+1]);
           if (++idx ==  args.length) {
             System.out.println("logdir not specified");
             System.out.println(USAGE);
@@ -367,6 +372,7 @@ public class DistCh extends DistTool {
           ToolRunner.printGenericCommandUsage(System.out);
           return -1;
         } else {
+          wld.addArg(args[idx]);
           ops.add(new FileOperation(args[idx]));
         }
       }
@@ -374,6 +380,7 @@ public class DistCh extends DistTool {
       if (ops.isEmpty()) {
         throw new IllegalStateException("Operation is empty");
       }
+      wld.embedConf(getConf());
       LOG.info("ops=" + ops);
       LOG.info("isIgnoreFailures=" + isIgnoreFailures);
       jobconf.setBoolean(Option.IGNORE_FAILURES.propertyname, isIgnoreFailures);

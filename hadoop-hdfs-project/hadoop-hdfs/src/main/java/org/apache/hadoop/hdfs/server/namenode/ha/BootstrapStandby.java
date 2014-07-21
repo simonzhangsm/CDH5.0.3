@@ -56,6 +56,7 @@ import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
@@ -88,6 +89,8 @@ public class BootstrapStandby implements Tool, Configurable {
   // Skip 4 - was used in previous versions, but no longer returned.
   static final int ERR_CODE_ALREADY_FORMATTED = 5;
   static final int ERR_CODE_LOGS_UNAVAILABLE = 6; 
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
 
   @Override
   public int run(String[] args) throws Exception {
@@ -115,14 +118,17 @@ public class BootstrapStandby implements Tool, Configurable {
     for (String arg : args) {
       if ("-force".equals(arg)) {
         force = true;
+        wld.addArg(arg);
       } else if ("-nonInteractive".equals(arg)) {
         interactive = false;
+        wld.addArg(arg);
       } else {
         printUsage();
         throw new HadoopIllegalArgumentException(
             "Illegal argument: " + arg);
       }
     }
+    wld.embedConf(getConf());
   }
 
   private void printUsage() {

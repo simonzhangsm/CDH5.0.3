@@ -70,8 +70,7 @@ abstract class DistTool implements org.apache.hadoop.util.Tool {
         if (!p.getFileSystem(conf).exists(p)) {
           ioes.add(new FileNotFoundException("Source "+p+" does not exist."));
         }
-      }
-      catch(IOException e) {ioes.add(e);}
+      } catch(IOException e) {ioes.add(e);}
     }
     if (!ioes.isEmpty()) {
       throw new InvalidInputException(ioes);

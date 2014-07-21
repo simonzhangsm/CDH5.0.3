@@ -37,8 +37,11 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.*;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 public class FileBench extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
 
   static int printUsage() {
     ToolRunner.printGenericCommandUsage(System.out);
@@ -170,21 +173,25 @@ public class FileBench extends Configured implements Tool {
       try {
         if ("-dir".equals(argv[i])) {
           root = new Path(argv[++i]).makeQualified(fs);
+          wld.addArg("-dir " + argv[i]);
           System.out.println("DIR: " + root.toString());
         } else if ("-seed".equals(argv[i])) {
           job.setLong("filebench.seed", Long.valueOf(argv[++i]));
+          wld.addArg("-seed " + argv[i]);
         } else if (argv[i].startsWith("-no")) {
           String arg = argv[i].substring(3);
           cc = rem(CCodec.class, cc, arg);
           ct = rem(CType.class, ct, arg);
           f =  rem(Format.class, f, arg);
           rw = rem(RW.class, rw, arg);
+          wld.addArg(argv[i]);
         } else {
           String arg = argv[i].substring(1);
           cc = add(CCodec.class, cc, arg);
           ct = add(CType.class, ct, arg);
           f =  add(Format.class, f, arg);
           rw = add(RW.class, rw, arg);
+          wld.addArg(argv[i]);
         }
       } catch (Exception e) {
         throw (IOException)new IOException().initCause(e);
@@ -196,6 +203,7 @@ public class FileBench extends Configured implements Tool {
       return -1;
     }
 
+    wld.embedConf(getConf());
     fillBlocks(job);
     job.setOutputKeyClass(Text.class);
     job.setOutputValueClass(Text.class);

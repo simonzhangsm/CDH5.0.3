@@ -55,6 +55,7 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 /**
  * The main class for computing sums using map/reduce jobs.
@@ -66,6 +67,8 @@ import org.apache.hadoop.util.ToolRunner;
  * a mix-type job may be executed on either side.
  */
 public final class DistSum extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   private static final Log LOG = LogFactory.getLog(DistSum.class);
 
   private static final String NAME = DistSum.class.getSimpleName();
@@ -585,6 +588,10 @@ public final class DistSum extends Configured implements Tool {
     final Summation sigma = Summation.valueOf(args[i++]);
     setParameters(DistSum.Parameters.parse(args, i));
 
+    for(String arg : args)
+       wld.addArg(arg);
+
+    wld.embedConf(getConf());
     Util.out.println();
     Util.out.println("name  = " + name);
     Util.out.println("sigma = " + sigma);

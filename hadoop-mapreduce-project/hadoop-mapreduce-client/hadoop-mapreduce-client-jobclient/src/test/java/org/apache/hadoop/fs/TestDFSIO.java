@@ -54,6 +54,7 @@ import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -86,6 +87,8 @@ import org.junit.Test;
  * </ul>
  */
 public class TestDFSIO implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   // Constants
   private static final Log LOG = LogFactory.getLog(TestDFSIO.class);
   private static final int DEFAULT_BUFFER_SIZE = 1000000;
@@ -677,41 +680,56 @@ public class TestDFSIO implements Tool {
 
     for (int i = 0; i < args.length; i++) {       // parse command line
       if (args[i].startsWith("-read")) {
+        wld.addArg(args[i]);
         testType = TestType.TEST_TYPE_READ;
       } else if (args[i].equals("-write")) {
+        wld.addArg(args[i]);
         testType = TestType.TEST_TYPE_WRITE;
       } else if (args[i].equals("-append")) {
+        wld.addArg(args[i]);
         testType = TestType.TEST_TYPE_APPEND;
       } else if (args[i].equals("-random")) {
+        wld.addArg(args[i]); 
         if(testType != TestType.TEST_TYPE_READ) return -1;
         testType = TestType.TEST_TYPE_READ_RANDOM;
       } else if (args[i].equals("-backward")) {
+        wld.addArg(args[i]);
         if(testType != TestType.TEST_TYPE_READ) return -1;
         testType = TestType.TEST_TYPE_READ_BACKWARD;
       } else if (args[i].equals("-skip")) {
+        wld.addArg(args[i]);
         if(testType != TestType.TEST_TYPE_READ) return -1;
         testType = TestType.TEST_TYPE_READ_SKIP;
       } else if (args[i].equals("-clean")) {
+        wld.addArg(args[i]);
         testType = TestType.TEST_TYPE_CLEANUP;
       } else if (args[i].startsWith("-seq")) {
+        wld.addArg(args[i]);
         isSequential = true;
       } else if (args[i].startsWith("-compression")) {
+        wld.addArg(args[i] + " " + args[i+1]);
         compressionClass = args[++i];
       } else if (args[i].equals("-nrFiles")) {
+        wld.addArg(args[i] + " " + args[i+1]);
         nrFiles = Integer.parseInt(args[++i]);
       } else if (args[i].equals("-fileSize") || args[i].equals("-size")) {
+        wld.addArg(args[i] + " " + args[i+1]);
         nrBytes = parseSize(args[++i]);
       } else if (args[i].equals("-skipSize")) {
+        wld.addArg(args[i] + " " + args[i+1]);
         skipSize = parseSize(args[++i]);
       } else if (args[i].equals("-bufferSize")) {
+        wld.addArg(args[i] + " " + args[i+1]);
         bufferSize = Integer.parseInt(args[++i]);
       } else if (args[i].equals("-resFile")) {
+        wld.addArg(args[i] + " " + args[i+1]);
         resFileName = args[++i];
       } else {
         System.err.println("Illegal argument: " + args[i]);
         return -1;
       }
     }
+    wld.embedConf(getConf());
     if(testType == null)
       return -1;
     if(testType == TestType.TEST_TYPE_READ_BACKWARD)

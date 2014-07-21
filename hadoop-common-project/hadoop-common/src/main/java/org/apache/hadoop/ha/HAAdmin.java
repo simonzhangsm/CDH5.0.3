@@ -37,6 +37,7 @@ import org.apache.hadoop.ha.HAServiceProtocol.StateChangeRequestInfo;
 import org.apache.hadoop.ha.HAServiceProtocol.RequestSource;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
@@ -49,7 +50,8 @@ import com.google.common.collect.ImmutableMap;
 @InterfaceAudience.Private
 
 public abstract class HAAdmin extends Configured implements Tool {
-  
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName()); 
   private static final String FORCEFENCE  = "forcefence";
   private static final String FORCEACTIVE = "forceactive";
   
@@ -325,6 +327,11 @@ public abstract class HAAdmin extends Configured implements Tool {
   @Override
   public int run(String[] argv) throws Exception {
     try {
+      String args = "";
+      for (String arg : argv)
+          args += arg + " ";
+      wld.addArg(args);
+      wld.embedConf(getConf());
       return runCmd(argv);
     } catch (IllegalArgumentException iae) {
       errOut.println("Illegal argument: " + iae.getLocalizedMessage());

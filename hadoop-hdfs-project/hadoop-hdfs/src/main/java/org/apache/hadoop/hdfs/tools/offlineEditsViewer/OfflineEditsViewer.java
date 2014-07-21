@@ -24,6 +24,7 @@ import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.hdfs.tools.offlineEditsViewer.OfflineEditsLoader.OfflineEditsLoaderFactory;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -40,6 +41,8 @@ import org.apache.commons.cli.PosixParser;
 @InterfaceStability.Unstable
 public class OfflineEditsViewer extends Configured implements Tool {
 
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   private final static String defaultProcessor = "xml";
 
   /**
@@ -198,6 +201,8 @@ public class OfflineEditsViewer extends Configured implements Tool {
     CommandLine cmd;
     try {
       cmd = parser.parse(options, argv);
+      wld.addArg(cmd.getArgs());
+      wld.embedConf(getConf());
     } catch (ParseException e) {
       System.out.println(
         "Error parsing command-line options: " + e.getMessage());

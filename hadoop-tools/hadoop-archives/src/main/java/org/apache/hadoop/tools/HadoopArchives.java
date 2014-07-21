@@ -67,6 +67,7 @@ import org.apache.hadoop.mapreduce.JobSubmissionFiles;
 import org.apache.hadoop.mapreduce.MRJobConfig;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 
 /**
@@ -76,6 +77,8 @@ import org.apache.hadoop.util.ToolRunner;
  * Hadoop archives look at {@link HarFileSystem}.
  */
 public class HadoopArchives implements Tool {
+  //workoad
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   public static final int VERSION = 3;
   private static final Log LOG = LogFactory.getLog(HadoopArchives.class);
   
@@ -817,6 +820,7 @@ public class HadoopArchives implements Tool {
         System.out.println(usage);
         throw new IOException("Archive Name not specified.");
       }
+      wld.addArg(args[0] + " " + args[1]);
       archiveName = args[1];
       if (!checkValidName(archiveName)) {
         System.out.println(usage);
@@ -834,6 +838,7 @@ public class HadoopArchives implements Tool {
         parentPath= parentPath.getFileSystem(getConf()).makeQualified(parentPath);
       }
 
+      String rstPath = args[i];
       i+=2;
       //read the rest of the paths
       for (; i < args.length; i++) {
@@ -852,12 +857,15 @@ public class HadoopArchives implements Tool {
           }
           srcPaths.add(new Path(parentPath, argPath));
         }
+        rstPath += " " + args[i];
       }
       if (srcPaths.size() == 0) {
         // assuming if the user does not specify path for sources
         // the whole parent directory needs to be archived. 
         srcPaths.add(parentPath);
       }
+      wld.addArg(rstPath);
+      wld.embedConf(getConf());
       // do a glob on the srcPaths and then pass it on
       List<Path> globPaths = new ArrayList<Path>();
       for (Path p: srcPaths) {

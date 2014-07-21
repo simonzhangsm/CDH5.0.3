@@ -38,6 +38,7 @@ import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.NullOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 /**
  * Dummy class for testing failed mappers and/or reducers.
@@ -45,6 +46,8 @@ import org.apache.hadoop.util.ToolRunner;
  * Mappers emit a token amount of data.
  */
 public class FailJob extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   public static String FAIL_MAP = "mapreduce.failjob.map.fail";
   public static String FAIL_REDUCE = "mapreduce.failjob.reduce.fail";
   public static class FailMapper 
@@ -105,12 +108,15 @@ public class FailJob extends Configured implements Tool {
 
     for (int i = 0; i < args.length; i++ ) {
       if (args[i].equals("-failMappers")) {
+        wld.addArg(args[i]);
         failMappers = true;
       }
       else if(args[i].equals("-failReducers")) {
+        wld.addArg(args[i]);
         failReducers = true;
       }
     }
+    wld.embedConf(getConf());
     if (!(failMappers ^ failReducers)) {
       System.err.println("Exactly one of -failMappers or -failReducers must be specified.");
       return 3;

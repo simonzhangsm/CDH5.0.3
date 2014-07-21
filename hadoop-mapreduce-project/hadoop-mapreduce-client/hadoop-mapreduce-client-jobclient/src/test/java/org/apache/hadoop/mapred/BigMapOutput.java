@@ -37,8 +37,11 @@ import org.apache.hadoop.mapred.lib.IdentityMapper;
 import org.apache.hadoop.mapred.lib.IdentityReducer;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 public class BigMapOutput extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   public static final Log LOG =
     LogFactory.getLog(BigMapOutput.class.getName());
   private static Random random = new Random();
@@ -118,10 +121,13 @@ public class BigMapOutput extends Configured implements Tool {
     long fileSizeInMB = 3 * 1024;         // default of 3GB (>2GB)
     for(int i=0; i < args.length; ++i) {
       if ("-input".equals(args[i])){
+        wld.addArg(args[i] + " " + args[i+1]);
         bigMapInput = new Path(args[++i]);
       } else if ("-output".equals(args[i])){
+        wld.addArg(args[i] + " " + args[i+1]);
         outputPath = new Path(args[++i]);
       } else if ("-create".equals(args[i])) {
+        wld.addArg(args[i] + " " + args[i+1]);
         createInput = true;
         fileSizeInMB = Long.parseLong(args[++i]);
       } else {
@@ -129,6 +135,7 @@ public class BigMapOutput extends Configured implements Tool {
       }
     }
     
+    wld.embedConf(getConf());
     FileSystem fs = FileSystem.get(getConf());
     JobConf jobConf = new JobConf(getConf(), BigMapOutput.class);
 

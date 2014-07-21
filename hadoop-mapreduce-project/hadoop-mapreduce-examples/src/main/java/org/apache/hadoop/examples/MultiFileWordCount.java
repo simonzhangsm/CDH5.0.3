@@ -44,6 +44,7 @@ import org.apache.hadoop.mapreduce.lib.reduce.IntSumReducer;
 import org.apache.hadoop.util.LineReader;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 
 /**
@@ -52,6 +53,8 @@ import org.apache.hadoop.util.ToolRunner;
  * words in the text files under the given input directory.
  */
 public class MultiFileWordCount extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
 
   /**
    * This record keeps &lt;filename,offset&gt; pairs.
@@ -250,6 +253,8 @@ public class MultiFileWordCount extends Configured implements Tool {
     FileInputFormat.addInputPaths(job, args[0]);
     FileOutputFormat.setOutputPath(job, new Path(args[1]));
 
+    wld.addArg(args);
+    wld.embedConf(getConf());
     return job.waitForCompletion(true) ? 0 : 1;
   }
 

@@ -33,10 +33,13 @@ import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.tools.GetUserMappingsProtocol;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 @Private
 public class HSAdmin extends Configured implements Tool {
 
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   public HSAdmin() {
     super();
   }
@@ -287,7 +290,7 @@ public class HSAdmin extends Configured implements Tool {
     int exitCode = -1;
     int i = 0;
     String cmd = args[i++];
-
+    wld.addArg(cmd);
     if ("-refreshUserToGroupsMappings".equals(cmd)
         || "-refreshSuperUserGroupsConfiguration".equals(cmd)
         || "-refreshAdminAcls".equals(cmd)
@@ -316,6 +319,7 @@ public class HSAdmin extends Configured implements Tool {
     } else if ("-getGroups".equals(cmd)) {
       String[] usernames = Arrays.copyOfRange(args, i, args.length);
       exitCode = getGroups(usernames);
+      wld.addArg(usernames);
     } else if ("-help".equals(cmd)) {
       if (i < args.length) {
         printHelp(args[i]);
@@ -327,6 +331,7 @@ public class HSAdmin extends Configured implements Tool {
       System.err.println(cmd.substring(1) + ": Unknown command");
       printUsage("");
     }
+    wld.embedConf(getConf());
     return exitCode;
   }
 

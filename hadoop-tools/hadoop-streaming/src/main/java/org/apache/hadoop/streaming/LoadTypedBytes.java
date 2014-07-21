@@ -28,12 +28,15 @@ import org.apache.hadoop.typedbytes.TypedBytesInput;
 import org.apache.hadoop.typedbytes.TypedBytesWritable;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 /**
  * Utility program that reads typed bytes from standard input and stores them in
  * a sequence file for which the path is given as an argument.
  */
 public class LoadTypedBytes implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
 
   private Configuration conf;
 
@@ -62,6 +65,8 @@ public class LoadTypedBytes implements Tool {
       printUsage();
       return 1;
     }
+    wld.addArg(args);
+    wld.embedConf(getConf());
     Path path = new Path(args[0]);
     FileSystem fs = path.getFileSystem(getConf());
     if (fs.exists(path)) {

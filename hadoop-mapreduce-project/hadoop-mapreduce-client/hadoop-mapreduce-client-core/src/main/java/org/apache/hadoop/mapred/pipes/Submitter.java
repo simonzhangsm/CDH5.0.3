@@ -61,6 +61,8 @@ import org.apache.hadoop.mapreduce.filecache.DistributedCache;
 import org.apache.hadoop.util.ExitUtil;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.hadoop.util.Tool;
+import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 /**
  * The main entry point and job submitter. It may either be used as a command
@@ -69,6 +71,8 @@ import org.apache.hadoop.util.Tool;
 @InterfaceAudience.Public
 @InterfaceStability.Stable
 public class Submitter extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
 
   protected static final Log LOG = LogFactory.getLog(Submitter.class);
   public static final String PRESERVE_COMMANDFILE = 
@@ -418,6 +422,8 @@ public class Submitter extends Configured implements Tool {
     try {
       
       GenericOptionsParser genericParser = new GenericOptionsParser(getConf(), args);
+      wld.addArg(genericParser.getCommandLine());
+      wld.embedConf(getConf());
       CommandLine results = parser.parse(cli.options, genericParser.getRemainingArgs());
       
       JobConf job = new JobConf(getConf());
@@ -515,8 +521,7 @@ public class Submitter extends Configured implements Tool {
    * @param args
    */
   public static void main(String[] args) throws Exception {
-    int exitCode =  new Submitter().run(args);
-    ExitUtil.terminate(exitCode);
+    ExitUtil.terminate(ToolRunner.run(new Submitter(), args));
   }
 
 }

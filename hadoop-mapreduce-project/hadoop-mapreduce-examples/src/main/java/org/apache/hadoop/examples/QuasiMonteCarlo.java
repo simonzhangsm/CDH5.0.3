@@ -40,6 +40,7 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 /**
  * A map/reduce program that estimates the value of Pi
@@ -75,6 +76,8 @@ import org.apache.hadoop.util.ToolRunner;
  * Finally, the estimated value of Pi is 4(numInside/numTotal).  
  */
 public class QuasiMonteCarlo extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   static final String DESCRIPTION
       = "A map/reduce program that estimates Pi using a quasi-Monte Carlo method.";
   /** tmp directory for input/output */
@@ -341,6 +344,8 @@ public class QuasiMonteCarlo extends Configured implements Tool {
       ToolRunner.printGenericCommandUsage(System.err);
       return 2;
     }
+    wld.addArg(args);
+    wld.embedConf(getConf());
     
     final int nMaps = Integer.parseInt(args[0]);
     final long nSamples = Long.parseLong(args[1]);

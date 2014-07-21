@@ -40,6 +40,7 @@ import org.apache.hadoop.mapreduce.lib.partition.InputSampler;
 import org.apache.hadoop.mapreduce.lib.partition.TotalOrderPartitioner;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 /**
  * This is the trivial map/reduce program that does absolutely nothing
@@ -55,6 +56,8 @@ import org.apache.hadoop.util.ToolRunner;
  *            <i>in-dir</i> <i>out-dir</i> 
  */
 public class Sort<K,V> extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   public static final String REDUCES_PER_HOST = 
     "mapreduce.sort.reducesperhost";
   private Job job = null;
@@ -99,20 +102,26 @@ public class Sort<K,V> extends Configured implements Tool {
     for(int i=0; i < args.length; ++i) {
       try {
         if ("-r".equals(args[i])) {
+          wld.addArg(args[i] + " " + args[i+1]);
           num_reduces = Integer.parseInt(args[++i]);
         } else if ("-inFormat".equals(args[i])) {
+          wld.addArg(args[i] + " " + args[i+1]);
           inputFormatClass = 
             Class.forName(args[++i]).asSubclass(InputFormat.class);
         } else if ("-outFormat".equals(args[i])) {
+          wld.addArg(args[i] + " " + args[i+1]);
           outputFormatClass = 
             Class.forName(args[++i]).asSubclass(OutputFormat.class);
         } else if ("-outKey".equals(args[i])) {
+          wld.addArg(args[i] + " " + args[i+1]);
           outputKeyClass = 
             Class.forName(args[++i]).asSubclass(WritableComparable.class);
         } else if ("-outValue".equals(args[i])) {
+          wld.addArg(args[i] + " " + args[i+1]);
           outputValueClass = 
             Class.forName(args[++i]).asSubclass(Writable.class);
         } else if ("-totalOrder".equals(args[i])) {
+          wld.addArg(args[i] + " " + args[i+1]);
           double pcnt = Double.parseDouble(args[++i]);
           int numSamples = Integer.parseInt(args[++i]);
           int maxSplits = Integer.parseInt(args[++i]);
@@ -120,6 +129,7 @@ public class Sort<K,V> extends Configured implements Tool {
           sampler =
             new InputSampler.RandomSampler<K,V>(pcnt, numSamples, maxSplits);
         } else {
+          wld.addArg(args[i]);
           otherArgs.add(args[i]);
         }
       } catch (NumberFormatException except) {
@@ -131,6 +141,7 @@ public class Sort<K,V> extends Configured implements Tool {
         return printUsage(); // exits
       }
     }
+    wld.embedConf(getConf());
     // Set user-supplied (possibly default) job configs
     job = new Job(conf);
     job.setJobName("sorter");

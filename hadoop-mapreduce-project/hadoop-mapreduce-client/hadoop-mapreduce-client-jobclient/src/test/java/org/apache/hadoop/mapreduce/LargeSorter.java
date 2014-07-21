@@ -37,6 +37,7 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.workload.Workload;
 
 /**
  * A sample MR job that helps with testing large sorts in the MapReduce
@@ -53,6 +54,8 @@ import org.apache.hadoop.util.ToolRunner;
  * reduce tasks to run.
  */
 public class LargeSorter extends Configured implements Tool {
+  //workload
+  private Workload wld = new Workload(this.getClass().getSimpleName());
   private static final String LS_PREFIX = "mapreduce.large-sorter.";
 
   public static final String MBS_PER_MAP = LS_PREFIX + "mbs-per-map";
@@ -219,7 +222,9 @@ public class LargeSorter extends Configured implements Tool {
     Path outDir = new Path(
         LargeSorter.class.getName() + System.currentTimeMillis());
 
+    wld.addArg("LargeSorter");
     Configuration conf = getConf();
+    wld.embedConf(conf);
     verifyNotZero(conf, MBS_PER_MAP);
     verifyNotZero(conf, NUM_MAP_TASKS);
 
