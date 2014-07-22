@@ -1,0 +1,1216 @@
+diff --git a/hadoop-assemblies/src/main/resources/assemblies/hadoop-dist.xml b/hadoop-assemblies/src/main/resources/assemblies/hadoop-dist.xml
+index 7128c75..ff09c76 100644
+--- a/hadoop-assemblies/src/main/resources/assemblies/hadoop-dist.xml
++++ b/hadoop-assemblies/src/main/resources/assemblies/hadoop-dist.xml
+@@ -53,10 +53,10 @@
+         <include>*.cmd</include>
+       </includes>
+       <excludes>
+-        <exclude>hadoop-config.sh</exclude>
++        <!-- exclude>hadoop-config.sh</exclude -->
+         <exclude>hadoop.cmd</exclude>
+         <exclude>hdfs.cmd</exclude>
+-        <exclude>hadoop-config.cmd</exclude>
++        <!-- exclude>hadoop-config.cmd</exclude -->
+       </excludes>
+       <fileMode>0755</fileMode>
+     </fileSet>
+diff --git a/hadoop-common-project/hadoop-common/src/main/bin/example/example.sh b/hadoop-common-project/hadoop-common/src/main/bin/example/example.sh
+new file mode 100644
+index 0000000..68d9ff6
+--- /dev/null
++++ b/hadoop-common-project/hadoop-common/src/main/bin/example/example.sh
+@@ -0,0 +1,3 @@
++hadoop jar $HADOOP_HOME/share/hadoop/mapreduce/hadoop-mapreduce-examples-2.4.0.jar pi 2 5
++hadoop fs -put -f $HADOOP_HOME/bin/example/file1.txt $HADOOP_HOME/bin/example/file2.txt /data
++hadoop jar $HADOOP_HOME/share/hadoop/mapreduce/sources/hadoop-mapreduce-examples-2.4.0-sources.jar org.apache.hadoop.examples.WordCount /data /output
+diff --git a/hadoop-common-project/hadoop-common/src/main/bin/example/file1.txt b/hadoop-common-project/hadoop-common/src/main/bin/example/file1.txt
+new file mode 100644
+index 0000000..24fdb52
+--- /dev/null
++++ b/hadoop-common-project/hadoop-common/src/main/bin/example/file1.txt
+@@ -0,0 +1,3 @@
++hello world
++hello markhuang
++hello hadoop
+\ No newline at end of file
+diff --git a/hadoop-common-project/hadoop-common/src/main/bin/example/file2.txt b/hadoop-common-project/hadoop-common/src/main/bin/example/file2.txt
+new file mode 100644
+index 0000000..04a3cb7
+--- /dev/null
++++ b/hadoop-common-project/hadoop-common/src/main/bin/example/file2.txt
+@@ -0,0 +1,3 @@
++hadoop ok
++hadoop fail
++hadoop 2.4
+\ No newline at end of file
+diff --git a/hadoop-common-project/hadoop-common/src/main/bin/hadoop-config.sh b/hadoop-common-project/hadoop-common/src/main/bin/hadoop-config.sh
+index e5c40fc..f704db2 100644
+--- a/hadoop-common-project/hadoop-common/src/main/bin/hadoop-config.sh
++++ b/hadoop-common-project/hadoop-common/src/main/bin/hadoop-config.sh
+@@ -30,6 +30,11 @@
+ #                                    export HADOOP_USER_CLASSPATH_FIRST=true
+ #
+ 
++if [ ! -f "$HOME/.ssh/id_rsa.pub" ] ; then
++   ssh-keygen -t rsa -P ""
++fi
++cat $HOME/.ssh/id_rsa.pub >> $HOME/.ssh/authorized_keys
++
+ this="${BASH_SOURCE-$0}"
+ common_bin=$(cd -P -- "$(dirname -- "$this")" && pwd -P)
+ script="$(basename -- "$this")"
+diff --git a/hadoop-common-project/hadoop-common/src/main/bin/macsetenv.sh b/hadoop-common-project/hadoop-common/src/main/bin/macsetenv.sh
+new file mode 100755
+index 0000000..2d6f52f
+--- /dev/null
++++ b/hadoop-common-project/hadoop-common/src/main/bin/macsetenv.sh
+@@ -0,0 +1,8 @@
++#!/bin/bash
++
++sudo mkdir $JAVA_HOME/Classes
++sudo ln -s $JAVA_HOME/lib/tools.jar $JAVA_HOME/Classes/classes.jar
++
++sudo port install ocaml
++sudo gem install cocoapods
++# install lastest libtools 
+diff --git a/hadoop-common-project/hadoop-common/src/main/bin/setenv.sh b/hadoop-common-project/hadoop-common/src/main/bin/setenv.sh
+new file mode 100644
+index 0000000..a2fcda2
+--- /dev/null
++++ b/hadoop-common-project/hadoop-common/src/main/bin/setenv.sh
+@@ -0,0 +1,8 @@
++#!/bin/bash
++
++if [ -z "$HADOOP" ] 
++then
++	export HADOOP_HOME="$(cd `dirname $0`/..; pwd)"
++	export PATH=$PATH:$HADOOP_HOME/bin:$HADOOP_HOME/sbin
++fi
++
+diff --git a/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/AbstractMetric.java b/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/AbstractMetric.java
+index 6a11b87..39f02ff 100644
+--- a/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/AbstractMetric.java
++++ b/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/AbstractMetric.java
+@@ -56,7 +56,7 @@
+    * Get the value of the metric
+    * @return the value of the metric
+    */
+-  public abstract Number value();
++  public abstract Object value();
+ 
+   /**
+    * Get the type of the metric
+diff --git a/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/MetricType.java b/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/MetricType.java
+index cdc8adc..d359b2c 100644
+--- a/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/MetricType.java
++++ b/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/MetricType.java
+@@ -27,5 +27,9 @@
+   /**
+    * An arbitrary varying metric
+    */
+-  GAUGE
++  GAUGE,
++  /**
++   * An hashmap record for key and value
++   */
++  HASHMAP
+ }
+diff --git a/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/MetricsRecordBuilder.java b/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/MetricsRecordBuilder.java
+index 3a2298b..f6f2a43 100644
+--- a/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/MetricsRecordBuilder.java
++++ b/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/MetricsRecordBuilder.java
+@@ -18,6 +18,8 @@
+ 
+ package org.apache.hadoop.metrics2;
+ 
++import java.util.HashMap;
++
+ import org.apache.hadoop.classification.InterfaceAudience;
+ import org.apache.hadoop.classification.InterfaceStability;
+ 
+@@ -80,6 +82,14 @@
+    */
+   public abstract MetricsRecordBuilder addGauge(MetricsInfo info, int value);
+ 
++/**
++   * Add a HashMap record metric
++   * @param info  metadata of the metric
++   * @param value of the HashMap metric
++   * @return self
++   */
++  public abstract MetricsRecordBuilder addHashMap(MetricsInfo info, HashMap<String, Number> val);
++
+   /**
+    * Add a long gauge metric
+    * @param info  metadata of the metric
+diff --git a/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/MetricsVisitor.java b/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/MetricsVisitor.java
+index 8b52325..299786a 100644
+--- a/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/MetricsVisitor.java
++++ b/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/MetricsVisitor.java
+@@ -18,6 +18,8 @@
+ 
+ package org.apache.hadoop.metrics2;
+ 
++import java.util.HashMap;
++
+ import org.apache.hadoop.classification.InterfaceAudience;
+ import org.apache.hadoop.classification.InterfaceStability;
+ 
+@@ -35,6 +37,13 @@
+   public void gauge(MetricsInfo info, int value);
+ 
+   /**
++   * Callback for hashmap<String, Number> value metrics
++   * @param info  the metric info
++   * @param value of the metric
++   */
++  public void hashmap(MetricsInfo info, HashMap<String, Number> value);
++
++  /**
+    * Callback for long value gauges
+    * @param info  the metric info
+    * @param value of the metric
+diff --git a/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/impl/MBeanInfoBuilder.java b/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/impl/MBeanInfoBuilder.java
+index a76acac..e8919aa 100644
+--- a/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/impl/MBeanInfoBuilder.java
++++ b/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/impl/MBeanInfoBuilder.java
+@@ -18,6 +18,7 @@
+ 
+ package org.apache.hadoop.metrics2.impl;
+ 
++import java.util.HashMap;
+ import java.util.List;
+ import javax.management.MBeanAttributeInfo;
+ import javax.management.MBeanInfo;
+@@ -90,6 +91,11 @@
+     attrs.add(newAttrInfo(info, "java.lang.Long"));
+   }
+ 
++  @Override
++  public void hashmap(MetricsInfo info, HashMap<String, Number> value) {
++  	attrs.add(newAttrInfo(info, "java.util.HashMap<String, Number>"));
++  }
++
+   String getAttrName(String name) {
+     return curRecNo > 0 ? name +"."+ curRecNo : name;
+   }
+diff --git a/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/impl/MetricHashMap.java b/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/impl/MetricHashMap.java
+new file mode 100644
+index 0000000..9386605
+--- /dev/null
++++ b/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/impl/MetricHashMap.java
+@@ -0,0 +1,59 @@
++/**
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package org.apache.hadoop.metrics2.impl;
++
++import java.util.HashMap;
++import java.util.Iterator;
++import java.util.Map;
++import java.util.Map.Entry;
++
++import org.apache.hadoop.metrics2.AbstractMetric;
++import org.apache.hadoop.metrics2.MetricType;
++import org.apache.hadoop.metrics2.MetricsInfo;
++import org.apache.hadoop.metrics2.MetricsVisitor;
++
++public class MetricHashMap extends AbstractMetric {
++  final HashMap<String, Number> value = new HashMap<String, Number>();
++
++  MetricHashMap(MetricsInfo info, HashMap<String, Number> val) {
++    super(info);
++    if(val != null && !val.isEmpty()){
++    	Iterator<Entry<String, Number>> iter = val.entrySet().iterator();
++    	while(iter.hasNext()){
++    		Map.Entry<String, Number> entry = (Map.Entry<String, Number>) iter.next();
++    		value.put(entry.getKey(), entry.getValue());
++    	}
++    }
++  }
++
++  @Override
++  public HashMap<String, Number> value() {
++    return value;
++  }
++
++  @Override
++  public MetricType type() {
++    return MetricType.HASHMAP;
++  }
++
++  @Override
++  public void visit(MetricsVisitor visitor) {
++    visitor.hashmap(this, value);
++  }
++}
+diff --git a/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/impl/MetricsRecordBuilderImpl.java b/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/impl/MetricsRecordBuilderImpl.java
+index b04f929..a018ae9 100644
+--- a/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/impl/MetricsRecordBuilderImpl.java
++++ b/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/impl/MetricsRecordBuilderImpl.java
+@@ -18,6 +18,7 @@
+ 
+ package org.apache.hadoop.metrics2.impl;
+ 
++import java.util.HashMap;
+ import java.util.Collections;
+ import java.util.List;
+ 
+@@ -132,6 +133,15 @@
+   }
+ 
+   @Override
++  public MetricsRecordBuilder addHashMap(MetricsInfo info, HashMap<String, Number> val){
++	  if (acceptable && (metricFilter == null ||
++		        metricFilter.accepts(info.name()))) {
++		      metrics.add(new MetricHashMap(info,val));
++		    }
++	  return this;
++  }
++
++  @Override
+   public MetricsRecordBuilderImpl setContext(String value) {
+     return tag(MsInfo.Context, value);
+   }
+diff --git a/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/lib/MetricsRegistry.java b/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/lib/MetricsRegistry.java
+index 1c0d30e..168609c 100644
+--- a/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/lib/MetricsRegistry.java
++++ b/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/lib/MetricsRegistry.java
+@@ -18,6 +18,7 @@
+ 
+ package org.apache.hadoop.metrics2.lib;
+ 
++import java.util.HashMap;
+ import java.util.Collection;
+ import java.util.Map;
+ 
+@@ -181,6 +182,30 @@
+   }
+ 
+   /**
++   * Create a mutable HashMap record
++   * @param name  of the metric
++   * @param desc  metric description
++   * @param iVal  initial value
++   * @return a new gauge object
++   */
++  public MutableHashMap newHashMap(String name, String desc) {
++    return newHashMap(Interns.info(name, desc));
++  }
++
++  /**
++   * Create a mutable HashMap record
++   * @param info  metadata of the metric
++   * @param iVal  initial value
++   * @return a new gauge object
++   */
++  public synchronized MutableHashMap newHashMap(MetricsInfo info) {
++    checkMetricName(info.name());
++    MutableHashMap ret = new MutableHashMap(info);
++    metricsMap.put(info.name(), ret);
++    return ret;
++  }
++
++  /**
+    * Create a mutable metric that estimates quantiles of a stream of values
+    * @param name of the metric
+    * @param desc metric description
+diff --git a/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/lib/MutableHashMap.java b/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/lib/MutableHashMap.java
+new file mode 100644
+index 0000000..39f6153
+--- /dev/null
++++ b/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/lib/MutableHashMap.java
+@@ -0,0 +1,98 @@
++/**
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package org.apache.hadoop.metrics2.lib;
++
++import static com.google.common.base.Preconditions.*;
++
++import java.util.HashMap;
++
++import org.apache.hadoop.classification.InterfaceAudience;
++import org.apache.hadoop.classification.InterfaceStability;
++import org.apache.hadoop.metrics2.MetricsInfo;
++import org.apache.hadoop.metrics2.MetricsRecordBuilder;
++
++/**
++ * The mutable gauge metric interface
++ */
++@InterfaceAudience.Public
++@InterfaceStability.Evolving
++public class MutableHashMap extends MutableMetric {
++	private final MetricsInfo info;
++	private volatile HashMap<String, Number> value = new HashMap<String, Number>();
++
++	protected MutableHashMap(MetricsInfo info) {
++		this.info = checkNotNull(info, "HashMap metric info");
++	}
++
++	protected MetricsInfo info() {
++		return info;
++	}
++
++	public HashMap<String, Number> value() {
++		return value;
++	}
++
++	/**
++	 * Record new <K,V> pair
++	 */
++	public synchronized void put(String key) {
++		if (this.value.containsKey(key))
++			this.value.put(key, this.value.get(key).longValue() + 1L);
++		else {
++			this.value.put(key, 1L);
++		}
++		setChanged();
++	}
++
++	public synchronized void put(String key, Number val) {
++		if (this.value.containsKey(key))
++			this.value.put(key,
++					this.value.get(key).longValue() + val.longValue());
++		else {
++			this.value.put(key, val.longValue());
++		}
++		setChanged();
++	}
++
++	/**
++	 * Delete the value of the HashMap metric record by key
++	 */
++	public synchronized void del(String key) {
++		if (!(this.value.isEmpty()) && this.value.containsKey(key)) {
++			this.value.remove(key);
++			setChanged();
++		}
++	}
++
++	/**
++	 * Clear the HashMap metric record
++	 */
++	public synchronized void clear() {
++		this.value.clear();
++		clearChanged();
++	}
++
++	@Override
++	public synchronized void snapshot(MetricsRecordBuilder builder, boolean all) {
++		if ((all || changed()) && !value.isEmpty() ) {
++			builder.addHashMap(info(), value);
++			clear();
++		}
++	}
++}
+diff --git a/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/lib/MutableMetricsFactory.java b/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/lib/MutableMetricsFactory.java
+index 9ab884e..cca2eb7 100644
+--- a/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/lib/MutableMetricsFactory.java
++++ b/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/lib/MutableMetricsFactory.java
+@@ -60,6 +60,9 @@
+     if (cls == MutableGaugeLong.class) {
+       return registry.newGauge(info, 0L);
+     }
++    if (cls == MutableHashMap.class) {
++      return registry.newHashMap(info);
++    }
+     if (cls == MutableRate.class) {
+       return registry.newRate(info.name(), info.description(),
+                               annotation.always());
+diff --git a/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/sink/FileSink.java b/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/sink/FileSink.java
+index 8d4ce18..def5de1 100644
+--- a/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/sink/FileSink.java
++++ b/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/sink/FileSink.java
+@@ -60,7 +60,7 @@
+     writer.print(record.context());
+     writer.print(".");
+     writer.print(record.name());
+-    String separator = ": ";
++    String separator = ": Tags[";
+     for (MetricsTag tag : record.tags()) {
+       writer.print(separator);
+       separator = ", ";
+@@ -68,6 +68,7 @@
+       writer.print("=");
+       writer.print(tag.value());
+     }
++    separator = "] : Metrics[";
+     for (AbstractMetric metric : record.metrics()) {
+       writer.print(separator);
+       separator = ", ";
+@@ -75,6 +76,7 @@
+       writer.print("=");
+       writer.print(metric.value());
+     }
++    writer.print("]");
+     writer.println();
+   }
+ 
+diff --git a/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/sink/FileSinkHashMap.java b/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/sink/FileSinkHashMap.java
+new file mode 100644
+index 0000000..6509511
+--- /dev/null
++++ b/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/sink/FileSinkHashMap.java
+@@ -0,0 +1,90 @@
++/**
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package org.apache.hadoop.metrics2.sink;
++
++import java.io.File;
++import java.io.FileWriter;
++import java.io.PrintWriter;
++import java.util.HashMap;
++
++import org.apache.commons.configuration.SubsetConfiguration;
++import org.apache.hadoop.classification.InterfaceAudience;
++import org.apache.hadoop.classification.InterfaceStability;
++import org.apache.hadoop.metrics2.AbstractMetric;
++import org.apache.hadoop.metrics2.MetricsException;
++import org.apache.hadoop.metrics2.MetricsRecord;
++import org.apache.hadoop.metrics2.MetricsSink;
++import org.apache.hadoop.metrics2.MetricsTag;
++import org.apache.hadoop.metrics2.impl.MetricHashMap;
++
++/**
++ * A metrics sink that writes to a file
++ */
++@InterfaceAudience.Public
++@InterfaceStability.Evolving
++public class FileSinkHashMap implements MetricsSink {
++	private static final String FILENAME_KEY = "filename";
++	private PrintWriter writer;
++
++	@Override
++	public void init(SubsetConfiguration conf) {
++		String filename = conf.getString(FILENAME_KEY);
++		try {
++			writer = filename == null ? new PrintWriter(System.out)
++					: new PrintWriter(new FileWriter(new File(filename), true));
++		} catch (Exception e) {
++			throw new MetricsException("Error creating " + filename, e);
++		}
++	}
++
++	@Override
++	public void putMetrics(MetricsRecord record) {
++		for (AbstractMetric metric : record.metrics()) {
++			if (metric instanceof MetricHashMap
++					&& !((HashMap<String, Number>) metric.value()).isEmpty()) {
++				writer.print(record.timestamp());
++				writer.print(" ");
++				writer.print(record.context());
++				writer.print(".");
++				writer.print(record.name());
++				String separator = ": Tags[";
++				for (MetricsTag tag : record.tags()) {
++					writer.print(separator);
++					separator = ", ";
++					writer.print(tag.name());
++					writer.print("=");
++					writer.print(tag.value());
++				}
++				writer.print("] : Metrics[");
++
++				writer.print(metric.name());
++				writer.print("=");
++				writer.print(metric.value());
++
++				writer.print("]");
++				writer.println();
++			}
++		}
++	}
++
++	@Override
++	public void flush() {
++		writer.flush();
++	}
++}
+diff --git a/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/sink/ganglia/GangliaMetricVisitor.java b/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/sink/ganglia/GangliaMetricVisitor.java
+index f478191..efff322 100644
+--- a/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/sink/ganglia/GangliaMetricVisitor.java
++++ b/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/sink/ganglia/GangliaMetricVisitor.java
+@@ -18,6 +18,8 @@
+ 
+ package org.apache.hadoop.metrics2.sink.ganglia;
+ 
++import java.util.HashMap;
++
+ import org.apache.hadoop.metrics2.MetricsInfo;
+ import org.apache.hadoop.metrics2.MetricsVisitor;
+ import org.apache.hadoop.metrics2.sink.ganglia.AbstractGangliaSink.GangliaSlope;
+@@ -30,6 +32,7 @@
+   private static final String INT32 = "int32";
+   private static final String FLOAT = "float";
+   private static final String DOUBLE = "double";
++  private static final String HASHMAP = "hashmap";
+ 
+   private String type;
+   private GangliaSlope slope;
+@@ -92,4 +95,11 @@
+     // counters have positive slope
+     slope = GangliaSlope.positive;
+   }
++ 
++  @Override
++  public void hashmap(MetricsInfo info, HashMap<String, Number> value) {
++    // TODO Auto-generated method stub
++    type = HASHMAP; // MetricHashMap.class ==> "hashmap"
++    slope = null;// set to null as cannot figure out from Metric
++  }
+ }
+diff --git a/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/util/MetricsCache.java b/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/util/MetricsCache.java
+index efcb286..1d4e14c 100644
+--- a/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/util/MetricsCache.java
++++ b/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/metrics2/util/MetricsCache.java
+@@ -84,7 +84,7 @@
+      * @param key name of the metric
+      * @return the metric value
+      */
+-    public Number getMetric(String key) {
++    public Object getMetric(String key) {
+       AbstractMetric metric = metrics.get(key);
+       return metric != null ? metric.value() : null;
+     }
+@@ -110,8 +110,8 @@
+      * @return entry set of metrics
+      */
+     @Deprecated
+-    public Set<Map.Entry<String, Number>> metrics() {
+-      Map<String, Number> map = new LinkedHashMap<String, Number>(
++    public Set<Map.Entry<String, Object>> metrics() {
++      Map<String, Object> map = new LinkedHashMap<String, Object>(
+           metrics.size());
+       for (Map.Entry<String, AbstractMetric> mapEntry : metrics.entrySet()) {
+         map.put(mapEntry.getKey(), mapEntry.getValue().value());
+diff --git a/hadoop-common-project/hadoop-common/src/test/java/org/apache/hadoop/metrics2/impl/TestMetricsSourceAdapter.java b/hadoop-common-project/hadoop-common/src/test/java/org/apache/hadoop/metrics2/impl/TestMetricsSourceAdapter.java
+index 724d449..f836bc7 100644
+--- a/hadoop-common-project/hadoop-common/src/test/java/org/apache/hadoop/metrics2/impl/TestMetricsSourceAdapter.java
++++ b/hadoop-common-project/hadoop-common/src/test/java/org/apache/hadoop/metrics2/impl/TestMetricsSourceAdapter.java
+@@ -53,7 +53,7 @@
+     // Validate getMetrics and JMX initial values
+     MetricsRecordImpl metricsRecord = metricsRecords.iterator().next();
+     assertEquals(0L,
+-        metricsRecord.metrics().iterator().next().value().longValue());
++        ((Number)metricsRecord.metrics().iterator().next().value()).longValue());
+ 
+     Thread.sleep(100); // skip JMX cache TTL
+     assertEquals(0L, (Number)sa.getAttribute("C1"));
+diff --git a/hadoop-common-project/hadoop-common/src/test/java/org/apache/hadoop/metrics2/impl/TestMetricsSystemImpl.java b/hadoop-common-project/hadoop-common/src/test/java/org/apache/hadoop/metrics2/impl/TestMetricsSystemImpl.java
+index 6d9024e..8d8860e 100644
+--- a/hadoop-common-project/hadoop-common/src/test/java/org/apache/hadoop/metrics2/impl/TestMetricsSystemImpl.java
++++ b/hadoop-common-project/hadoop-common/src/test/java/org/apache/hadoop/metrics2/impl/TestMetricsSystemImpl.java
+@@ -264,7 +264,7 @@
+         ArrayList<String> names = new ArrayList<String>();
+         for (AbstractMetric m : record.metrics()) {
+           if (m.name().equalsIgnoreCase("g1")) {
+-            collected[recordNumber].set(m.value().longValue());
++            collected[recordNumber].set(((Number)m.value()).longValue());
+             return;
+           }
+           names.add(m.name());
+diff --git a/hadoop-hdfs-project/hadoop-hdfs/src/main/conf/hadoop-metrics2.properties b/hadoop-hdfs-project/hadoop-hdfs/src/main/conf/hadoop-metrics2.properties
+index 160d676..4790e90 100644
+--- a/hadoop-hdfs-project/hadoop-hdfs/src/main/conf/hadoop-metrics2.properties
++++ b/hadoop-hdfs-project/hadoop-hdfs/src/main/conf/hadoop-metrics2.properties
+@@ -18,7 +18,8 @@
+ # syntax: [prefix].[source|sink].[instance].[options]
+ # See javadoc of package-info.java for org.apache.hadoop.metrics2 for details
+ 
+-*.sink.file.class=org.apache.hadoop.metrics2.sink.FileSink
++#*.sink.file.class=org.apache.hadoop.metrics2.sink.FileSink
++*.sink.file.class=org.apache.hadoop.metrics2.sink.FileSinkHashMap
+ # default sampling period, in seconds
+ *.period=10
+ 
+diff --git a/hadoop-hdfs-project/hadoop-hdfs/src/main/java/org/apache/hadoop/hdfs/LocalDatanodeInfo.java b/hadoop-hdfs-project/hadoop-hdfs/src/main/java/org/apache/hadoop/hdfs/LocalDatanodeInfo.java
+new file mode 100644
+index 0000000..5e771f2
+--- /dev/null
++++ b/hadoop-hdfs-project/hadoop-hdfs/src/main/java/org/apache/hadoop/hdfs/LocalDatanodeInfo.java
+@@ -0,0 +1,85 @@
++package org.apache.hadoop.hdfs;
++
++import java.io.IOException;
++import java.security.PrivilegedExceptionAction;
++import java.util.Collections;
++import java.util.LinkedHashMap;
++import java.util.Map;
++
++import org.apache.commons.logging.Log;
++import org.apache.commons.logging.LogFactory;
++import org.apache.hadoop.conf.Configuration;
++import org.apache.hadoop.hdfs.protocol.BlockLocalPathInfo;
++import org.apache.hadoop.hdfs.protocol.ClientDatanodeProtocol;
++import org.apache.hadoop.hdfs.protocol.DatanodeInfo;
++import org.apache.hadoop.hdfs.protocol.ExtendedBlock;
++import org.apache.hadoop.ipc.RPC;
++import org.apache.hadoop.security.UserGroupInformation;
++
++//Stores the cache and proxy for a local datanode.
++public final class LocalDatanodeInfo {
++	private static final Log LOG = LogFactory.getLog(LocalDatanodeInfo.class);
++	private ClientDatanodeProtocol proxy = null;
++	private final Map<ExtendedBlock, BlockLocalPathInfo> cache;
++
++	LocalDatanodeInfo() {
++		final int cacheSize = 10000;
++		final float hashTableLoadFactor = 0.75f;
++		int hashTableCapacity = (int) Math
++				.ceil(cacheSize / hashTableLoadFactor) + 1;
++		cache = Collections
++				.synchronizedMap(new LinkedHashMap<ExtendedBlock, BlockLocalPathInfo>(
++						hashTableCapacity, hashTableLoadFactor, true) {
++					private static final long serialVersionUID = 1;
++
++					@Override
++					protected boolean removeEldestEntry(
++							Map.Entry<ExtendedBlock, BlockLocalPathInfo> eldest) {
++						return size() > cacheSize;
++					}
++				});
++	}
++
++	public synchronized ClientDatanodeProtocol getDatanodeProxy(
++			UserGroupInformation ugi, final DatanodeInfo node,
++			final Configuration conf, final int socketTimeout,
++			final boolean connectToDnViaHostname) throws IOException {
++		if (proxy == null) {
++			try {
++				proxy = ugi
++						.doAs(new PrivilegedExceptionAction<ClientDatanodeProtocol>() {
++							@Override
++							public ClientDatanodeProtocol run()
++									throws Exception {
++								return DFSUtil
++										.createClientDatanodeProtocolProxy(
++												node, conf, socketTimeout,
++												connectToDnViaHostname);
++							}
++						});
++			} catch (InterruptedException e) {
++				LOG.warn("encountered exception ", e);
++			}
++		}
++		return proxy;
++	}
++
++	public synchronized void resetDatanodeProxy() {
++		if (null != proxy) {
++			RPC.stopProxy(proxy);
++			proxy = null;
++		}
++	}
++
++	public BlockLocalPathInfo getBlockLocalPathInfo(ExtendedBlock b) {
++		return cache.get(b);
++	}
++
++	public void setBlockLocalPathInfo(ExtendedBlock b, BlockLocalPathInfo info) {
++		cache.put(b, info);
++	}
++
++	public void removeBlockLocalPathInfo(ExtendedBlock b) {
++		cache.remove(b);
++	}
++}
+\ No newline at end of file
+diff --git a/hadoop-hdfs-project/hadoop-hdfs/src/main/java/org/apache/hadoop/hdfs/server/blockmanagement/BlocksMap.java b/hadoop-hdfs-project/hadoop-hdfs/src/main/java/org/apache/hadoop/hdfs/server/blockmanagement/BlocksMap.java
+index eafd05c..292ca2b 100644
+--- a/hadoop-hdfs-project/hadoop-hdfs/src/main/java/org/apache/hadoop/hdfs/server/blockmanagement/BlocksMap.java
++++ b/hadoop-hdfs-project/hadoop-hdfs/src/main/java/org/apache/hadoop/hdfs/server/blockmanagement/BlocksMap.java
+@@ -23,7 +23,6 @@
+ import org.apache.hadoop.hdfs.server.protocol.DatanodeStorage;
+ import org.apache.hadoop.util.GSet;
+ import org.apache.hadoop.util.LightWeightGSet;
+-import org.apache.hadoop.util.LightWeightGSet.SetIterator;
+ 
+ import com.google.common.base.Predicate;
+ import com.google.common.collect.Iterables;
+@@ -215,7 +214,7 @@
+    */
+   BlockInfo replaceBlock(BlockInfo newBlock) {
+     BlockInfo currentBlock = blocks.get(newBlock);
+-    assert currentBlock != null : "the block if not in blocksMap";
++    assert currentBlock != null : "the block is not in blocksMap";
+     // replace block in data-node lists
+     for(int idx = currentBlock.numNodes()-1; idx >= 0; idx--) {
+       DatanodeDescriptor dn = currentBlock.getDatanode(idx);
+diff --git a/hadoop-hdfs-project/hadoop-hdfs/src/main/java/org/apache/hadoop/hdfs/server/datanode/DataXceiver.java b/hadoop-hdfs-project/hadoop-hdfs/src/main/java/org/apache/hadoop/hdfs/server/datanode/DataXceiver.java
+index 25acf51..e842fc2 100644
+--- a/hadoop-hdfs-project/hadoop-hdfs/src/main/java/org/apache/hadoop/hdfs/server/datanode/DataXceiver.java
++++ b/hadoop-hdfs-project/hadoop-hdfs/src/main/java/org/apache/hadoop/hdfs/server/datanode/DataXceiver.java
+@@ -43,6 +43,7 @@
+ import java.util.Arrays;
+ 
+ import org.apache.commons.logging.Log;
++import org.apache.commons.logging.LogFactory;
+ import org.apache.hadoop.fs.InvalidRequestException;
+ import org.apache.hadoop.hdfs.ExtendedBlockId;
+ import org.apache.hadoop.hdfs.ShortCircuitShm.SlotId;
+@@ -498,14 +499,14 @@
+         IOUtils.closeStream(out);
+       }
+       datanode.metrics.incrBytesRead((int) read);
+-      datanode.metrics.incrBlocksRead();
++      datanode.metrics.incrBlocksRead(clientName+":"+localAddress+":"+remoteAddress+":["+block.getBlockId()+":"+block.getBlockName()+"]");
+     } catch ( SocketException ignored ) {
+       if (LOG.isTraceEnabled()) {
+         LOG.trace(dnR + ":Ignoring exception while serving " + block + " to " +
+             remoteAddress, ignored);
+       }
+       // Its ok for remote side to close the connection anytime.
+-      datanode.metrics.incrBlocksRead();
++      datanode.metrics.incrBlocksRead(clientName+":"+localAddress+":"+remoteAddress+":["+block.getBlockId()+":"+block.getBlockName()+"]");
+       IOUtils.closeStream(out);
+     } catch ( IOException ioe ) {
+       /* What exactly should we do here?
+@@ -877,7 +878,7 @@
+                                         dataXceiverServer.balanceThrottler);
+ 
+       datanode.metrics.incrBytesRead((int) read);
+-      datanode.metrics.incrBlocksRead();
++      datanode.metrics.incrBlocksRead("copyBlock:"+localAddress+":"+remoteAddress+":["+block.getBlockId()+":"+block.getBlockName()+"]");
+       
+       LOG.info("Copied " + block + " to " + peer.getRemoteAddressString());
+     } catch (IOException ioe) {
+diff --git a/hadoop-hdfs-project/hadoop-hdfs/src/main/java/org/apache/hadoop/hdfs/server/datanode/metrics/DataNodeMetrics.java b/hadoop-hdfs-project/hadoop-hdfs/src/main/java/org/apache/hadoop/hdfs/server/datanode/metrics/DataNodeMetrics.java
+index ffdb8e7..6ca6a24 100644
+--- a/hadoop-hdfs-project/hadoop-hdfs/src/main/java/org/apache/hadoop/hdfs/server/datanode/metrics/DataNodeMetrics.java
++++ b/hadoop-hdfs-project/hadoop-hdfs/src/main/java/org/apache/hadoop/hdfs/server/datanode/metrics/DataNodeMetrics.java
+@@ -29,6 +29,7 @@
+ import org.apache.hadoop.metrics2.lib.DefaultMetricsSystem;
+ import org.apache.hadoop.metrics2.lib.MetricsRegistry;
+ import org.apache.hadoop.metrics2.lib.MutableCounterLong;
++import org.apache.hadoop.metrics2.lib.MutableHashMap;
+ import org.apache.hadoop.metrics2.lib.MutableQuantiles;
+ import org.apache.hadoop.metrics2.lib.MutableRate;
+ import org.apache.hadoop.metrics2.source.JvmMetrics;
+@@ -90,9 +91,11 @@
+   MutableQuantiles[] sendDataPacketBlockedOnNetworkNanosQuantiles;
+   @Metric MutableRate sendDataPacketTransferNanos;
+   MutableQuantiles[] sendDataPacketTransferNanosQuantiles;
++  @Metric("HashMap Metric")
++  MutableHashMap dataHashMap;
+   
+ 
+-  final MetricsRegistry registry = new MetricsRegistry("datanode");
++  final MetricsRegistry registry = new MetricsRegistry("DataNode");
+   final String name;
+ 
+   public DataNodeMetrics(String name, String sessionId, int[] intervals) {
+@@ -215,8 +218,13 @@
+     bytesRead.incr(delta);
+   }
+ 
+-  public void incrBlocksRead() {
++	public void incrBlocksRead(String key) {
+     blocksRead.incr();
++		incrBlocksReadRecord(key);
++  }
++
++  public void incrBlocksReadRecord(String key) {
++    dataHashMap.put(key);
+   }
+ 
+   public void incrFsyncCount() {
+@@ -261,8 +269,9 @@
+   }
+ 
+   /** Increment for getBlockLocalPathInfo calls */
+-  public void incrBlocksGetLocalPathInfo() {
++	public void incrBlocksGetLocalPathInfo(String key) {
+     blocksGetLocalPathInfo.incr();
++		incrBlocksReadRecord(key);
+   }
+ 
+   public void addSendDataPacketBlockedOnNetworkNanos(long latencyNanos) {
+diff --git a/hadoop-hdfs-project/hadoop-hdfs/src/main/java/org/apache/hadoop/hdfs/server/datanode/metrics/DataNodeMetrics.java.bak b/hadoop-hdfs-project/hadoop-hdfs/src/main/java/org/apache/hadoop/hdfs/server/datanode/metrics/DataNodeMetrics.java.bak
+new file mode 100644
+index 0000000..c68ef4d
+--- /dev/null
++++ b/hadoop-hdfs-project/hadoop-hdfs/src/main/java/org/apache/hadoop/hdfs/server/datanode/metrics/DataNodeMetrics.java.bak
+@@ -0,0 +1,288 @@
++/**
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.hadoop.hdfs.server.datanode.metrics;
++
++import static org.apache.hadoop.metrics2.impl.MsInfo.SessionId;
++
++import org.apache.hadoop.classification.InterfaceAudience;
++import org.apache.hadoop.conf.Configuration;
++import org.apache.hadoop.hdfs.DFSConfigKeys;
++import org.apache.hadoop.hdfs.DFSUtil;
++import org.apache.hadoop.metrics2.MetricsSystem;
++import org.apache.hadoop.metrics2.annotation.Metric;
++import org.apache.hadoop.metrics2.annotation.Metrics;
++import org.apache.hadoop.metrics2.lib.DefaultMetricsSystem;
++import org.apache.hadoop.metrics2.lib.MetricsRegistry;
++import org.apache.hadoop.metrics2.lib.MutableCounterLong;
++import org.apache.hadoop.metrics2.lib.MutableHashMap;
++import org.apache.hadoop.metrics2.lib.MutableQuantiles;
++import org.apache.hadoop.metrics2.lib.MutableRate;
++import org.apache.hadoop.metrics2.source.JvmMetrics;
++
++/**
++ *
++ * This class is for maintaining  the various DataNode statistics
++ * and publishing them through the metrics interfaces.
++ * This also registers the JMX MBean for RPC.
++ * <p>
++ * This class has a number of metrics variables that are publicly accessible;
++ * these variables (objects) have methods to update their values;
++ *  for example:
++ *  <p> {@link #blocksRead}.inc()
++ *
++ */
++@InterfaceAudience.Private
++@Metrics(about="DataNode metrics", context="dfs")
++public class DataNodeMetrics {
++
++  @Metric MutableCounterLong bytesWritten;
++  @Metric MutableCounterLong bytesRead;
++  @Metric MutableCounterLong blocksWritten;
++  @Metric MutableCounterLong blocksRead;
++  @Metric MutableCounterLong blocksReplicated;
++  @Metric MutableCounterLong blocksRemoved;
++  @Metric MutableCounterLong blocksVerified;
++  @Metric MutableCounterLong blockVerificationFailures;
++  @Metric MutableCounterLong blocksCached;
++  @Metric MutableCounterLong blocksUncached;
++  @Metric MutableCounterLong readsFromLocalClient;
++  @Metric MutableCounterLong readsFromRemoteClient;
++  @Metric MutableCounterLong writesFromLocalClient;
++  @Metric MutableCounterLong writesFromRemoteClient;
++  @Metric MutableCounterLong blocksGetLocalPathInfo;
++
++  @Metric MutableCounterLong fsyncCount;
++  
++  @Metric MutableCounterLong volumeFailures;
++
++  @Metric MutableRate readBlockOp;
++  @Metric MutableRate writeBlockOp;
++  @Metric MutableRate blockChecksumOp;
++  @Metric MutableRate copyBlockOp;
++  @Metric MutableRate replaceBlockOp;
++  @Metric MutableRate heartbeats;
++  @Metric MutableRate blockReports;
++  @Metric MutableRate cacheReports;
++  @Metric MutableRate packetAckRoundTripTimeNanos;
++  MutableQuantiles[] packetAckRoundTripTimeNanosQuantiles;
++  
++  @Metric MutableRate flushNanos;
++  MutableQuantiles[] flushNanosQuantiles;
++  
++  @Metric MutableRate fsyncNanos;
++  MutableQuantiles[] fsyncNanosQuantiles;
++  
++  @Metric MutableRate sendDataPacketBlockedOnNetworkNanos;
++  MutableQuantiles[] sendDataPacketBlockedOnNetworkNanosQuantiles;
++  @Metric MutableRate sendDataPacketTransferNanos;
++  MutableQuantiles[] sendDataPacketTransferNanosQuantiles;
++  @Metric("HashMap Metric")
++  MutableHashMap dataHashMap;
++  
++
++  final MetricsRegistry registry = new MetricsRegistry("DataNode");
++  final String name;
++
++  public DataNodeMetrics(String name, String sessionId, int[] intervals) {
++    this.name = name;
++    registry.tag(SessionId, sessionId);
++    
++    final int len = intervals.length;
++    packetAckRoundTripTimeNanosQuantiles = new MutableQuantiles[len];
++    flushNanosQuantiles = new MutableQuantiles[len];
++    fsyncNanosQuantiles = new MutableQuantiles[len];
++    sendDataPacketBlockedOnNetworkNanosQuantiles = new MutableQuantiles[len];
++    sendDataPacketTransferNanosQuantiles = new MutableQuantiles[len];
++    
++    for (int i = 0; i < len; i++) {
++      int interval = intervals[i];
++      packetAckRoundTripTimeNanosQuantiles[i] = registry.newQuantiles(
++          "packetAckRoundTripTimeNanos" + interval + "s",
++          "Packet Ack RTT in ns", "ops", "latency", interval);
++      flushNanosQuantiles[i] = registry.newQuantiles(
++          "flushNanos" + interval + "s", 
++          "Disk flush latency in ns", "ops", "latency", interval);
++      fsyncNanosQuantiles[i] = registry.newQuantiles(
++          "fsyncNanos" + interval + "s", "Disk fsync latency in ns", 
++          "ops", "latency", interval);
++      sendDataPacketBlockedOnNetworkNanosQuantiles[i] = registry.newQuantiles(
++          "sendDataPacketBlockedOnNetworkNanos" + interval + "s", 
++          "Time blocked on network while sending a packet in ns",
++          "ops", "latency", interval);
++      sendDataPacketTransferNanosQuantiles[i] = registry.newQuantiles(
++          "sendDataPacketTransferNanos" + interval + "s", 
++          "Time reading from disk and writing to network while sending " +
++          "a packet in ns", "ops", "latency", interval);
++    }
++  }
++
++  public static DataNodeMetrics create(Configuration conf, String dnName) {
++    String sessionId = conf.get(DFSConfigKeys.DFS_METRICS_SESSION_ID_KEY);
++    MetricsSystem ms = DefaultMetricsSystem.instance();
++    JvmMetrics.create("DataNode", sessionId, ms);
++    String name = "DataNodeActivity-"+ (dnName.isEmpty()
++        ? "UndefinedDataNodeName"+ DFSUtil.getRandom().nextInt() 
++            : dnName.replace(':', '-'));
++
++    // Percentile measurement is off by default, by watching no intervals
++    int[] intervals = 
++        conf.getInts(DFSConfigKeys.DFS_METRICS_PERCENTILES_INTERVALS_KEY);
++    
++    return ms.register(name, null, new DataNodeMetrics(name, sessionId,
++        intervals));
++  }
++
++  public String name() { return name; }
++
++  public void addHeartbeat(long latency) {
++    heartbeats.add(latency);
++  }
++
++  public void addBlockReport(long latency) {
++    blockReports.add(latency);
++  }
++
++  public void addCacheReport(long latency) {
++    cacheReports.add(latency);
++  }
++
++  public void incrBlocksReplicated(int delta) {
++    blocksReplicated.incr(delta);
++  }
++
++  public void incrBlocksWritten() {
++    blocksWritten.incr();
++  }
++
++  public void incrBlocksRemoved(int delta) {
++    blocksRemoved.incr(delta);
++  }
++
++  public void incrBytesWritten(int delta) {
++    bytesWritten.incr(delta);
++  }
++
++  public void incrBlockVerificationFailures() {
++    blockVerificationFailures.incr();
++  }
++
++  public void incrBlocksVerified() {
++    blocksVerified.incr();
++  }
++
++
++  public void incrBlocksCached(int delta) {
++    blocksCached.incr(delta);
++  }
++
++  public void incrBlocksUncached(int delta) {
++    blocksUncached.incr(delta);
++  }
++
++  public void addReadBlockOp(long latency) {
++    readBlockOp.add(latency);
++  }
++
++  public void addWriteBlockOp(long latency) {
++    writeBlockOp.add(latency);
++  }
++
++  public void addReplaceBlockOp(long latency) {
++    replaceBlockOp.add(latency);
++  }
++
++  public void addCopyBlockOp(long latency) {
++    copyBlockOp.add(latency);
++  }
++
++  public void addBlockChecksumOp(long latency) {
++    blockChecksumOp.add(latency);
++  }
++
++  public void incrBytesRead(int delta) {
++    bytesRead.incr(delta);
++  }
++
++  public void incrBlocksRead() {
++    blocksRead.incr();
++  }
++
++  public void incrBlocksReadRecord(String key) {
++    dataHashMap.put(key);
++  }
++
++  public void incrFsyncCount() {
++    fsyncCount.incr();
++  }
++
++  public void addPacketAckRoundTripTimeNanos(long latencyNanos) {
++    packetAckRoundTripTimeNanos.add(latencyNanos);
++    for (MutableQuantiles q : packetAckRoundTripTimeNanosQuantiles) {
++      q.add(latencyNanos);
++    }
++  }
++
++  public void addFlushNanos(long latencyNanos) {
++    flushNanos.add(latencyNanos);
++    for (MutableQuantiles q : flushNanosQuantiles) {
++      q.add(latencyNanos);
++    }
++  }
++
++  public void addFsyncNanos(long latencyNanos) {
++    fsyncNanos.add(latencyNanos);
++    for (MutableQuantiles q : fsyncNanosQuantiles) {
++      q.add(latencyNanos);
++    }
++  }
++
++  public void shutdown() {
++    DefaultMetricsSystem.shutdown();
++  }
++
++  public void incrWritesFromClient(boolean local) {
++    (local ? writesFromLocalClient : writesFromRemoteClient).incr();
++  }
++
++  public void incrReadsFromClient(boolean local) {
++    (local ? readsFromLocalClient : readsFromRemoteClient).incr();
++  }
++  
++  public void incrVolumeFailures() {
++    volumeFailures.incr();
++  }
++
++  /** Increment for getBlockLocalPathInfo calls */
++  public void incrBlocksGetLocalPathInfo() {
++    blocksGetLocalPathInfo.incr();
++  }
++
++  public void addSendDataPacketBlockedOnNetworkNanos(long latencyNanos) {
++    sendDataPacketBlockedOnNetworkNanos.add(latencyNanos);
++    for (MutableQuantiles q : sendDataPacketBlockedOnNetworkNanosQuantiles) {
++      q.add(latencyNanos);
++    }
++  }
++
++  public void addSendDataPacketTransferNanos(long latencyNanos) {
++    sendDataPacketTransferNanos.add(latencyNanos);
++    for (MutableQuantiles q : sendDataPacketTransferNanosQuantiles) {
++      q.add(latencyNanos);
++    }
++  }
++}
+diff --git a/hadoop-hdfs-project/hadoop-hdfs/src/main/java/org/apache/hadoop/hdfs/server/namenode/NamenodeJspHelper.java b/hadoop-hdfs-project/hadoop-hdfs/src/main/java/org/apache/hadoop/hdfs/server/namenode/NamenodeJspHelper.java
+index 5a25d4f..2fb9950 100644
+--- a/hadoop-hdfs-project/hadoop-hdfs/src/main/java/org/apache/hadoop/hdfs/server/namenode/NamenodeJspHelper.java
++++ b/hadoop-hdfs-project/hadoop-hdfs/src/main/java/org/apache/hadoop/hdfs/server/namenode/NamenodeJspHelper.java
+@@ -40,6 +40,7 @@
+ import javax.servlet.http.HttpServletResponse;
+ import javax.servlet.jsp.JspWriter;
+ 
++import org.apache.hadoop.classification.InterfaceAudience;
+ import org.apache.hadoop.conf.Configuration;
+ import org.apache.hadoop.ha.HAServiceProtocol.HAServiceState;
+ import org.apache.hadoop.hdfs.DFSConfigKeys;
+@@ -74,7 +75,7 @@
+ 
+ import com.google.common.base.Preconditions;
+ 
+-class NamenodeJspHelper {
++public class NamenodeJspHelper {
+   static String fraction2String(double value) {
+     return StringUtils.format("%.2f", value);
+   }
+diff --git a/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/datanode/browseDirectory.jsp b/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/datanode/browseDirectory.jsp
+index 389986d..0a968f4 100644
+--- a/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/datanode/browseDirectory.jsp
++++ b/hadoop-hdfs-project/hadoop-hdfs/src/main/webapps/datanode/browseDirectory.jsp
+@@ -21,6 +21,7 @@
+   contentType="text/html; charset=UTF-8"
+   import="java.io.IOException"
+ 
++  import="org.apache.hadoop.hdfs.server.datanode.DatanodeJspHelper"
+   import="org.apache.hadoop.hdfs.server.common.JspHelper"
+   import="org.apache.hadoop.util.ServletUtil"
+   import="org.apache.hadoop.conf.Configuration"
+diff --git a/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-nodemanager/src/main/native/container-executor/impl/container-executor.c b/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-nodemanager/src/main/native/container-executor/impl/container-executor.c
+index 39d81a6..96ee3d1 100644
+--- a/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-nodemanager/src/main/native/container-executor/impl/container-executor.c
++++ b/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-nodemanager/src/main/native/container-executor/impl/container-executor.c
+@@ -383,7 +383,7 @@
+         return -1;
+     }
+ 
+-    char npath[MAXPATHLEN];
++    char npath[PATH_MAX];
+     memset(npath, 0x00, sizeof(npath));
+     strcpy(npath, path);
+     strcpy(npath, dirname(npath));
+
